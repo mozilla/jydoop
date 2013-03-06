@@ -1,0 +1,3 @@
+The plan is to package python modules in jar files
+Then use -libjars to distribute them to hadoop nodes.
+Then use sys.path.append [trick](http://www.jython.org/jythonbook/en/1.0/ModulesPackages.html#sys-path) to instantiate them
