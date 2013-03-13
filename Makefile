@@ -17,7 +17,7 @@ hadoop: driver.jar
 	-hadoop fs -rmr /user/tglek/output
 	time hadoop jar $< taras.$(TASK) -libjars $(subst :,$(comma),$(HADOOP_CLASSPATH)) $(ARGS)
 
-driver.jar: out/CallJava.py
+driver.jar: out/CallJava.py $(JAVA_SOURCE)
 	javac  -Xlint:deprecation -d out  -cp $(CP) $(JAVA_SOURCE)
 	jar -cvf $@ -C out .
 
