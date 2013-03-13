@@ -37,13 +37,6 @@ def map(key, value, context):
 #def reduce(key, values, context):
 #    context.write(key, Text())
 
-class DummyContext:
-    def __init__(self):
-        pass
-    def write(self, a, b):
-        print (a,b)
-
 if __name__ == "__main__":
-    f = open(sys.argv[1])
-    for l in f.readlines():
-        map("", l, DummyContext)
+    from FileDriver import map_reduce
+    map_reduce(sys.modules[__name__], sys.argv[1])
