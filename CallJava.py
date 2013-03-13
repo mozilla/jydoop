@@ -1,6 +1,6 @@
 import sys
 try:
-#    import org.apache.hadoop.io.Text as Text;
+    import org.apache.hadoop.io.Text as Text;
     import java.lang.System as System
     from com.xhaus.jyson import JysonCodec as json
 except ImportError: #cpython
