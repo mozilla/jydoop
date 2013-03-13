@@ -1,4 +1,4 @@
-//javac -classpath /usr/lib/hbase/lib/hadoop-core.jar:/usr/lib/hive/lib/commons-cli-1.2.jar:/usr/lib/hbase/hbase-0.90.6-cdh3u4.jar:akela-0.5-SNAPSHOT.jar   FoldJSON.java  -d out  -Xlint:deprecation  && jar -cvf taras.jar -C out/ . 
+//javac -classpath /usr/lib/hbase/lib/hadoop-core.jar:/usr/lib/hive/lib/commons-cli-1.2.jar:/usr/lib/hbase/hbase-0.90.6-cdh3u4.jar:akela-0.5-SNAPSHOT.jar   HBaseDriver.java  -d out  -Xlint:deprecation  && jar -cvf taras.jar -C out/ . 
 //  scan 'telemetry', {LIMIT => 1}
 package taras;
 
@@ -34,9 +34,11 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
+import org.python.core.PyObject;
 
-
-public class FoldJSON extends Configured implements Tool {
+public class HBaseDriver extends Configured implements Tool {
+  static PyObject mapfunc = PythonWrapper.get("map");
+  static PyObject reducefunc = PythonWrapper.get("reduce");
 
   public static class MyMapper extends TableMapper<Text, Text>  {
 
@@ -45,18 +47,19 @@ public class FoldJSON extends Configured implements Tool {
     public void map(ImmutableBytesWritable key, Result value, Context context) throws IOException, InterruptedException {
       //text.set(""+value.raw()[0].getTimestamp());     // we can only emit Writables...
       byte[] value_bytes =  value.getValue("data".getBytes(), "json".getBytes());
-      PythonWrapper.call("map", new String(key.get()), new String(value_bytes), context);
+      mapfunc._jcall(new Object[] {new String(key.get()), new String(value_bytes), context});
+
     }
   }
 
   public static class MyReducer extends Reducer<Text, Text, Text, Text>  {
 
     public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-      PythonWrapper.call("reduce", key, values, context);
+      reducefunc._jcall(new Object[] {key, values, context});
     }
   }
 
-  private FoldJSON() {}                               // singleton
+  private HBaseDriver() {}                               // singleton
 
   public int run(String[] args) throws Exception {
     if (args.length != 5) {
@@ -66,8 +69,8 @@ public class FoldJSON extends Configured implements Tool {
     }
     
     Path outdir = new Path(args[1]);
-    Job job = new Job(getConf(), "FoldJSON");
-    job.setJarByClass(FoldJSON.class);     // class that contains mapper
+    Job job = new Job(getConf(), "HBaseDriver");
+    job.setJarByClass(HBaseDriver.class);     // class that contains mapper
     try {
       FileSystem.get(getConf()).delete(outdir, true);
       System.err.println("Deleted old " + args[1]);
@@ -97,14 +100,14 @@ public class FoldJSON extends Configured implements Tool {
     //    job.setOutputFormatClass(NullOutputFormat.class);   // because we aren't emitting anything from mapper
     job.setReducerClass(MyReducer.class);    // reducer class
     // set below to 0 to do a map-only job
-    job.setNumReduceTasks(0);    // at least one, adjust as required
+    job.setNumReduceTasks(reducefunc != null ? 1 : 0 );    // at least one, adjust as required
 
 
     return job.waitForCompletion(true) ? 0 : 1;
   }
 
   public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(new Configuration(), new FoldJSON(), args);
+    int res = ToolRunner.run(new Configuration(), new HBaseDriver(), args);
     System.exit(res);
   }
 

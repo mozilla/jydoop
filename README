@@ -1,8 +1,12 @@
-Python is shipped in the same jar file as java.
+Python script gets wrapped into driver.jar which also contains HDFSDriver and HBaseDriver. Choose one depending on if you are doing a map of a hdfs or hbase.
 
+To process files do:
+make hadoop ARGS="input output" TASK=HDFSDriver SCRIPT=mypythonfile.py
 
-to execute a job:
+To process hbase:
+make hadoop ARGS="telemetry output 201302281 201302282 yyyyMMddk" SCRIPT=mypythonfile.py
 
-make hadoop 
+python script has to define a map and (optionally) reduce function. If reduce function is not present hadoop will not do a reduce, which can save a lot of time for simple data dumps.
 
-Idea is that one keeps boilerplate in java and does impotant things in python
+Idea is that one keeps boilerplate in java and does important things in python.
+
