@@ -11,7 +11,6 @@ import java.util.List;
 import com.mozilla.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -39,30 +38,21 @@ import org.apache.hadoop.fs.FileSystem;
 
 public class FoldJSON extends Configured implements Tool {
 
-  public static class MyMapper extends TableMapper<Text, IntWritable>  {
+  public static class MyMapper extends TableMapper<Text, Text>  {
 
-    private final IntWritable ONE = new IntWritable(1);
     private Text text = new Text();
     private static int i = 0;
-    public void map(ImmutableBytesWritable row, Result value, Context context) throws IOException, InterruptedException {
-      if (i < 10) {
-        String val = new String(value.getValue(Bytes.toBytes("data"), Bytes.toBytes("json")));
-        //      String val = new String(value.getValue(Bytes.toBytes("data"), Bytes.toBytes("timestamp")));
-        text.set(""+value.raw()[0].getTimestamp());     // we can only emit Writables...
-        context.write(text, ONE);
-        i++;
-      }
+    public void map(ImmutableBytesWritable key, Result value, Context context) throws IOException, InterruptedException {
+      //text.set(""+value.raw()[0].getTimestamp());     // we can only emit Writables...
+      byte[] value_bytes =  value.getValue("data".getBytes(), "json".getBytes());
+      PythonWrapper.call("map", new String(key.get()), new String(value_bytes), context);
     }
   }
 
-  public static class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable>  {
+  public static class MyReducer extends Reducer<Text, Text, Text, Text>  {
 
-    public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-      int i = 0;
-      for (IntWritable val : values) {
-        i += val.get();
-      }
-      context.write(key, new IntWritable(i));
+    public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+      PythonWrapper.call("reduce", key, values, context);
     }
   }
 
@@ -101,12 +91,13 @@ public class FoldJSON extends Configured implements Tool {
                                           scans,             // Scan instance to control CF and attribute selection
                                           MyMapper.class,   // mapper
                                           Text.class,             // mapper output key
-                                          IntWritable.class,             // mapper output value
+                                          Text.class,             // mapper output value
                                           job);
     
     //    job.setOutputFormatClass(NullOutputFormat.class);   // because we aren't emitting anything from mapper
     job.setReducerClass(MyReducer.class);    // reducer class
-    job.setNumReduceTasks(2);    // at least one, adjust as required
+    // set below to 0 to do a map-only job
+    job.setNumReduceTasks(0);    // at least one, adjust as required
 
 
     return job.waitForCompletion(true) ? 0 : 1;

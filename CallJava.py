@@ -1,20 +1,23 @@
+import sys
 import org.apache.hadoop.io.Text as Text;
 import java.lang.System as System
 from com.xhaus.jyson import JysonCodec as json
 
 def map(key, value, context):
-    payload = json.loads(value.toString())
-    i = payload['info']
-    outkey = value #reuse Text class
-    outkey.set(i['OS'] + "/" + i['version'])
-    outvalue = Text(i['appUpdateChannel'] + i['appBuildID'])
-    context.write(outkey, outvalue)
-
+    try:
+        payload = json.loads(value)
+        i = payload['info']
+        if not 'chromeHangs' in payload:
+            return
+    except:
+        e = sys.exc_info()[0]
+        context.write(Text("exception:%s" % e), Text(key))
+        return
+    outkey = Text(value)
+    context.write(outkey, Text())
+    
 def reduce(key, values, context):
-    outstr = ""
-    for v in values.iterator():
-        outstr += v.toString() + ", "
-    context.write(key, Text(outstr))
+    context.write(key, Text())
 
 def test(text):
     f = open("sample")

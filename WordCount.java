@@ -1,4 +1,4 @@
-package org.apache.hadoop.examples;
+package taras;
 
 
 import java.io.IOException;
@@ -14,31 +14,9 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
-import org.python.core.PyObject;
-import org.python.util.PythonInterpreter;
 
 public class WordCount {
-  private static PythonInterpreter py = null;
   
-  public static void Python(String methodName, Object... args) {
-    if (py == null) {
-      py = new PythonInterpreter();
-      py.exec("import CallJava");
-    }
-    String argstr="";
-    for (int i = 0;i<args.length;i++) {
-      Object arg = args[i];
-      String var = "arg" + i;
-      py.set(var, arg);
-      argstr+= var;
-
-      if (i != args.length - 1)
-        argstr += ",";
-
-    }
-    py.exec("CallJava." + methodName + "("+argstr+")");
-  }
-
   public static class TokenizerMapper 
        extends Mapper<Object, Text, Text, Text> {
     
@@ -46,8 +24,7 @@ public class WordCount {
       
     public void map(Object key, Text value, Context context
                     ) throws IOException, InterruptedException {
-      Python("map", key, value, context);
-
+      PythonWrapper.call("map", key, value.toString(), context);
     }
   }
   
@@ -58,12 +35,12 @@ public class WordCount {
     public void reduce(Text key, Iterable<Text> values, 
                        Context context
                        ) throws IOException, InterruptedException {
-      Python("reduce", key, values, context);
+      PythonWrapper.call("reduce", key, values, context);
     }
   }
 
   public static void main(String[] args) throws Exception {
-    //    Python("map", null, null, null);
+    //    PythonWrapper.call("map", null, null, null);
     Configuration conf = new Configuration();
     String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
     if (otherArgs.length != 2) {
