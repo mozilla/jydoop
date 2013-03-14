@@ -14,7 +14,7 @@ run: driver.jar
 	java -cp driver.jar:$(CP) taras.$(TASK)
 
 hadoop: driver.jar
-	-hadoop fs -rmr /user/tglek/output
+#	-hadoop fs -rmr /user/tglek/output
 	time hadoop jar $< taras.$(TASK) -libjars $(subst :,$(comma),$(HADOOP_CLASSPATH)) $(ARGS)
 
 driver.jar: out/CallJava.py $(JAVA_SOURCE)
@@ -23,6 +23,6 @@ driver.jar: out/CallJava.py $(JAVA_SOURCE)
 
 out/CallJava.py: $(SCRIPT)
 	mkdir -p out/script
-	ln $< $@
+	ln -vf $< $@
 
 %.class: ../%.java
