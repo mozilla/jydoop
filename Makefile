@@ -26,3 +26,7 @@ out/CallJava.py: $(SCRIPT)
 	ln -vf $< $@
 
 %.class: ../%.java
+
+download:
+	wget http://repo1.maven.org/maven2/org/python/jython/2.7-b1/jython-2.7-b1.jar
+	wget http://people.mozilla.org/~tglek/jyson-1.0.2.jar
