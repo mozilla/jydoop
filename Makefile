@@ -5,7 +5,7 @@ HBASE_CP = $(subst $(SPACE),:,$(wildcard $(HBASE_PATH)/*.jar) $(wildcard $(HBASE
 #javac -classpath   HBaseDriver.java  -d out  -Xlint:deprecation  && jar -cvf taras.jar -C out/ . 
 export HADOOP_USER_CLASSPATH_FIRST="true"
 # this will need to change once more jars are added
-export HADOOP_CLASSPATH=jython-2.7-b1.jar:jyson-1.0.2.jar:akela-0.5-SNAPSHOT.jar
+export HADOOP_CLASSPATH=jython-standalone-2.7b1.jar:akela-0.5-SNAPSHOT.jar
 CP=$(HADOOP_CLASSPATH):$(HBASE_CP)
 comma:=,
 JAVA_SOURCE=HDFSDriver.java PythonWrapper.java HBaseDriver.java
@@ -32,5 +32,5 @@ out/CallJava.py: $(SCRIPT)
 %.class: ../%.java
 
 download:
-	wget http://repo1.maven.org/maven2/org/python/jython/2.7-b1/jython-2.7-b1.jar
-	wget http://people.mozilla.org/~tglek/jyson-1.0.2.jar
+	wget http://repo1.maven.org/maven2/org/python/jython/2.7-b1/jython-standalone-2.7-b1.jar
+	wget http://people.mozilla.org/~bsmedberg/akela-0.5-SNAPSHOT.jar
