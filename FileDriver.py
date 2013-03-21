@@ -1,3 +1,5 @@
+defaultglobals = dict(globals())
+
 import sys
 
 class LocalContext:
@@ -19,30 +21,36 @@ class LocalContext:
             for v in values:
                 print "%s %s" % (key, v)
 
-def map_reduce(module, file):
-    try:
-        reducefunc = module.reduce
-    except AttributeError:
-        reducefunc = None
+def map_reduce(module, fd):
+    reducefunc = getattr(module, 'reduce', None)
 
     context = LocalContext(reducefunc == None)
 
-    if file == "-":
-        f = sys.stdin
-    else:
-        f = open(file)
     total = 0;
     while True:
-        l = f.readline()
+        l = fd.readline()
         length = len(l)
         total += length
         if length == 0:
             break
-        module.map(str(total), l, context)
-    f.close()
+        getattr(module, 'map')(str(total), l, context)
 
     reduced_context = LocalContext()
     for key, values in context.result.iteritems():
-        module.reduce(key, values, reduced_context)
+        reducefunc(key, values, reduced_context)
     reduced_context.dump()
     
+if __name__ == '__main__':
+    import imp
+
+    modulepath, filepath = sys.argv[1:]
+
+    if filepath == "-":
+        fd = sys.stdin
+    else:
+        fd = open(filepath)
+
+    modulefd = open(modulepath)
+
+    module = imp.load_module('pydoop_main', modulefd, modulepath, ('.py', 'U', 1))
+    map_reduce(module, fd)

@@ -1,4 +1,5 @@
 #make hadoop ARGS="telemetry anr 20130313 20130313 yyyyMMdd" SCRIPT=scripts/anr.py
+#python FileDriver.py scripts/anr.py test.data
 import sys
 import json
 try:
@@ -12,7 +13,3 @@ def map(key, value, context):
         return
     outkey = Text(value)
     context.write(outkey, Text())
-    
-if __name__ == "__main__":
-    from FileDriver import map_reduce
-    map_reduce(sys.modules[__name__], sys.argv[1])
