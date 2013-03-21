@@ -3,16 +3,15 @@ Querying json with java is too much work. Doing in Python allows for easier loca
 
 Idea is that one keeps boilerplate in java and does important things in python.
 
-To test python map/reduce one can use FileDriver.py in __main__
-For example:
+To test scripts, use PythonDriver.py:
 ```
-python CallJava.py log > log.out
+python PythonDriver.py CallJava.py log > log.out
 ```
-where log is a newline-separated json dump. See CallJava.py for an example a script runnable with normal python and jyson.
+where log is a newline-separated json dump. See CallJava.py for an example mapreduce job with normal python and jyson.
 
 
 =Packaging
-Python script gets wrapped into driver.jar which also contains HDFSDriver and HBaseDriver. Choose one depending on if you are doing a map of a hdfs or hbase.
+Python script gets wrapped into driver.jar with the HBaseDriver.
 
 To process files do:
 ````
