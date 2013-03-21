@@ -1,8 +1,12 @@
+HBASE_PATH ?= /usr/lib/hbase
+SPACE := $(NULL) $(NULL)
+HBASE_CP = $(subst $(SPACE),:,$(wildcard $(HBASE_PATH)/*.jar) $(wildcard $(HBASE_PATH)/lib/*.jar))
+
 #javac -classpath   HBaseDriver.java  -d out  -Xlint:deprecation  && jar -cvf taras.jar -C out/ . 
 export HADOOP_USER_CLASSPATH_FIRST="true"
 # this will need to change once more jars are added
-export HADOOP_CLASSPATH=jython-2.7b1.jar:jyson-1.0.2.jar:akela-0.5-SNAPSHOT.jar
-CP=$(HADOOP_CLASSPATH):/usr/lib/hbase/lib/hadoop-core.jar:/usr/lib/hive/lib/commons-cli-1.2.jar:/usr/lib/hbase/hbase-0.90.6-cdh3u4.jar
+export HADOOP_CLASSPATH=jython-2.7-b1.jar:jyson-1.0.2.jar:akela-0.5-SNAPSHOT.jar
+CP=$(HADOOP_CLASSPATH):$(HBASE_CP)
 comma:=,
 JAVA_SOURCE=HDFSDriver.java PythonWrapper.java HBaseDriver.java
 TASK=HBaseDriver
