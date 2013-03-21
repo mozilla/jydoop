@@ -1,12 +1,11 @@
 #make hadoop ARGS="telemetry anr 20130313 20130313 yyyyMMdd" SCRIPT=scripts/anr.py
 import sys
+import json
 try:
     import org.apache.hadoop.io.Text as Text;
     import java.lang.System as System
-    from com.xhaus.jyson import JysonCodec as json
 except ImportError: #cpython
     Text = str
-    import json
 
 def map(key, value, context):
     if value.find("androidANR") == -1:

@@ -1,10 +1,14 @@
+HBASE_PATH ?= /usr/lib/hbase
+SPACE := $(NULL) $(NULL)
+HBASE_CP = $(subst $(SPACE),:,$(wildcard $(HBASE_PATH)/*.jar) $(wildcard $(HBASE_PATH)/lib/*.jar))
+
 #javac -classpath   HBaseDriver.java  -d out  -Xlint:deprecation  && jar -cvf taras.jar -C out/ . 
 export HADOOP_USER_CLASSPATH_FIRST="true"
 # this will need to change once more jars are added
-export HADOOP_CLASSPATH=jython-2.7b1.jar:jyson-1.0.2.jar:akela-0.5-SNAPSHOT.jar
-CP=$(HADOOP_CLASSPATH):/usr/lib/hbase/lib/hadoop-core.jar:/usr/lib/hive/lib/commons-cli-1.2.jar:/usr/lib/hbase/hbase-0.90.6-cdh3u4.jar
+export HADOOP_CLASSPATH=jython-standalone-2.7-b1.jar:akela-0.5-SNAPSHOT.jar
+CP=$(HADOOP_CLASSPATH):$(HBASE_CP)
 comma:=,
-JAVA_SOURCE=HDFSDriver.java PythonWrapper.java HBaseDriver.java
+JAVA_SOURCE=PythonWrapper.java HBaseDriver.java
 TASK=HBaseDriver
 ARGS=input output
 SCRIPT=CallJava.py
@@ -28,5 +32,5 @@ out/CallJava.py: $(SCRIPT)
 %.class: ../%.java
 
 download:
-	wget http://repo1.maven.org/maven2/org/python/jython/2.7-b1/jython-2.7-b1.jar
-	wget http://people.mozilla.org/~tglek/jyson-1.0.2.jar
+	wget -c http://repo1.maven.org/maven2/org/python/jython-standalone/2.7-b1/jython-standalone-2.7-b1.jar -O jython-standalone-2.7-b1.jar
+	wget -c http://people.mozilla.org/~bsmedberg/akela-0.5-SNAPSHOT.jar -O akela-0.5-SNAPSHOT.jar
