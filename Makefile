@@ -32,5 +32,5 @@ out/CallJava.py: $(SCRIPT)
 %.class: ../%.java
 
 download:
-	curl http://repo1.maven.org/maven2/org/python/jython-standalone/2.7-b1/jython-standalone-2.7-b1.jar > jython-standalone-2.7-b1.jar
-	curl http://people.mozilla.org/~bsmedberg/akela-0.5-SNAPSHOT.jar > akela-0.5-SNAPSHOT.jar
+	wget -c http://repo1.maven.org/maven2/org/python/jython-standalone/2.7-b1/jython-standalone-2.7-b1.jar -O jython-standalone-2.7-b1.jar
+	wget -c http://people.mozilla.org/~bsmedberg/akela-0.5-SNAPSHOT.jar -O akela-0.5-SNAPSHOT.jar
