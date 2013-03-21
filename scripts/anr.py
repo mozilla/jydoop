@@ -8,8 +8,9 @@ try:
 except ImportError: #cpython
     Text = str
 
+# This mapper is just a filter: only records which have an android hang report
+# are included in the result.
 def map(key, value, context):
     if value.find("androidANR") == -1:
         return
-    outkey = Text(value)
-    context.write(outkey, Text())
+    context.write(key, value)
