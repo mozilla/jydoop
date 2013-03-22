@@ -1,6 +1,6 @@
 //javac -classpath /usr/lib/hbase/lib/hadoop-core.jar:/usr/lib/hive/lib/commons-cli-1.2.jar:/usr/lib/hbase/hbase-0.90.6-cdh3u4.jar:akela-0.5-SNAPSHOT.jar   HBaseDriver.java  -d out  -Xlint:deprecation  && jar -cvf taras.jar -C out/ . 
 //  scan 'telemetry', {LIMIT => 1}
-package taras;
+package org.mozilla.pydoop;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Iterator;
 import com.mozilla.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -16,6 +17,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
@@ -35,27 +37,57 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.python.core.PyObject;
+import org.python.core.PyIterator;
 
 public class HBaseDriver extends Configured implements Tool {
   static PyObject mapfunc = PythonWrapper.get("map");
   static PyObject reducefunc = PythonWrapper.get("reduce");
 
-  public static class MyMapper extends TableMapper<Text, Text>  {
+  private static class WritableIterWrapper extends PyIterator
+  {
+    private Iterator<TypeWritable> iter;
+    
+    public WritableIterWrapper(Iterator<TypeWritable> i)
+    {
+      iter = i;
+    }
 
-    private Text text = new Text();
-    private static int i = 0;
-    public void map(ImmutableBytesWritable key, Result value, Context context) throws IOException, InterruptedException {
-      //text.set(""+value.raw()[0].getTimestamp());     // we can only emit Writables...
-      byte[] value_bytes =  value.getValue("data".getBytes(), "json".getBytes());
-      mapfunc._jcall(new Object[] {new String(key.get()), new String(value_bytes), context});
-
+    public PyObject __iternext__() {
+      if (!iter.hasNext()) {
+	return null;
+      }
+      return iter.next().value;
     }
   }
 
-  public static class MyReducer extends Reducer<Text, Text, Text, Text>  {
+  private static class ContextWrapper
+  {
+    private TaskInputOutputContext cx;
 
-    public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-      reducefunc._jcall(new Object[] {key, values, context});
+    public ContextWrapper(TaskInputOutputContext taskcx)
+    {
+      cx = taskcx;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void write(PyObject key, PyObject val) throws IOException, InterruptedException
+    {
+      cx.write(new TypeWritable(key), new TypeWritable(val));
+    }
+  }
+
+  public static class MyMapper extends TableMapper<TypeWritable, TypeWritable>  {
+
+    public void map(ImmutableBytesWritable key, Result value, Context context) throws IOException, InterruptedException {
+      byte[] value_bytes =  value.getValue("data".getBytes(), "json".getBytes());
+      mapfunc._jcall(new Object[] {key.toString(), new String(value_bytes), context});
+    }
+  }
+
+  public static class MyReducer extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable>  {
+
+    public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
+      reducefunc._jcall(new Object[] {key.value, new WritableIterWrapper(values.iterator()), context});
     }
   }
 

@@ -8,10 +8,10 @@ export HADOOP_USER_CLASSPATH_FIRST="true"
 export HADOOP_CLASSPATH=jython-standalone-2.7-b1.jar:akela-0.5-SNAPSHOT.jar
 CP=$(HADOOP_CLASSPATH):$(HBASE_CP)
 comma:=,
-JAVA_SOURCE=PythonWrapper.java HBaseDriver.java
+JAVA_SOURCE=$(addprefix org/mozilla/pydoop/,PythonWrapper.java TypeWritable.java HBaseDriver.java)
 TASK=HBaseDriver
 ARGS=input output
-SCRIPT=CallJava.py
+SCRIPT=scripts/CallJava.py
 all: driver.jar
 
 run: driver.jar
@@ -22,7 +22,7 @@ hadoop: driver.jar
 	time hadoop jar $< taras.$(TASK) -libjars $(subst :,$(comma),$(HADOOP_CLASSPATH)) $(ARGS)
 
 driver.jar: out/CallJava.py $(JAVA_SOURCE)
-	javac  -Xlint:deprecation -d out  -cp $(CP) $(JAVA_SOURCE)
+	javac -Xlint:deprecation -d out  -cp $(CP) $(JAVA_SOURCE)
 	jar -cvf $@ -C out .
 
 out/CallJava.py: $(SCRIPT)

@@ -1,4 +1,4 @@
-package taras;
+package org.mozilla.pydoop;
 import org.python.core.PyObject;
 import org.python.core.PySystemState;
 import org.python.core.Py;
