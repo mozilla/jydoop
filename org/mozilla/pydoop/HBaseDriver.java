@@ -13,7 +13,6 @@ import com.mozilla.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -122,14 +121,13 @@ public class HBaseDriver extends Configured implements Tool {
     List<Pair<String,String>> columns = new ArrayList<Pair<String,String>>(); // family:qualifier
     columns.add(new Pair<String,String>("data", "json"));
     Scan[] scans = MultiScanTableMapReduceUtil.generateBytePrefixScans(startCal, endCal, dateFormat,columns,500, false);
-    //    MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(TABLE_NAME, scans, TelemetryInvalidCountsMapper.class, Text.class, Text.class, job);
 
     MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(
                                           args[0],        // input HBase table name
                                           scans,             // Scan instance to control CF and attribute selection
                                           MyMapper.class,   // mapper
-                                          Text.class,             // mapper output key
-                                          Text.class,             // mapper output value
+                                          TypeWritable.class,             // mapper output key
+                                          TypeWritable.class,             // mapper output value
                                           job);
     
     //    job.setOutputFormatClass(NullOutputFormat.class);   // because we aren't emitting anything from mapper

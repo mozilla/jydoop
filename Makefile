@@ -15,11 +15,11 @@ SCRIPT=scripts/CallJava.py
 all: driver.jar
 
 run: driver.jar
-	java -cp driver.jar:$(CP) taras.$(TASK)
+	java -cp driver.jar:$(CP) org.mozilla.pydoop.$(TASK)
 
 hadoop: driver.jar
 #	-hadoop fs -rmr /user/tglek/output
-	time hadoop jar $< taras.$(TASK) -libjars $(subst :,$(comma),$(HADOOP_CLASSPATH)) $(ARGS)
+	time hadoop jar $< org.mozilla.pydoop.$(TASK) -libjars $(subst :,$(comma),$(HADOOP_CLASSPATH)) $(ARGS)
 
 driver.jar: out/CallJava.py $(JAVA_SOURCE)
 	javac -Xlint:deprecation -d out  -cp $(CP) $(JAVA_SOURCE)
