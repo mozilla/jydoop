@@ -42,7 +42,7 @@ public class HBaseDriver extends Configured implements Tool {
   static PyObject mapfunc = PythonWrapper.get("map");
   static PyObject reducefunc = PythonWrapper.get("reduce");
 
-  private static class WritableIterWrapper extends PyIterator
+  public static class WritableIterWrapper extends PyIterator
   {
     private Iterator<TypeWritable> iter;
     
@@ -59,7 +59,7 @@ public class HBaseDriver extends Configured implements Tool {
     }
   }
 
-  private static class ContextWrapper
+  public static class ContextWrapper
   {
     private TaskInputOutputContext cx;
 
@@ -79,14 +79,24 @@ public class HBaseDriver extends Configured implements Tool {
 
     public void map(ImmutableBytesWritable key, Result value, Context context) throws IOException, InterruptedException {
       byte[] value_bytes =  value.getValue("data".getBytes(), "json".getBytes());
-      mapfunc._jcall(new Object[] {key.toString(), new String(value_bytes), context});
+      Object jparams[] = new Object[] {
+          key.toString(),
+          new String(value_bytes),
+          new ContextWrapper(context)
+      };
+      mapfunc._jcall(jparams);
     }
   }
 
   public static class MyReducer extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable>  {
 
     public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
-      reducefunc._jcall(new Object[] {key.value, new WritableIterWrapper(values.iterator()), context});
+        Object jparams[] = new Object[] {
+            key.value,
+            new WritableIterWrapper(values.iterator()),
+            new ContextWrapper(context)
+        };
+        reducefunc._jcall(jparams);
     }
   }
 

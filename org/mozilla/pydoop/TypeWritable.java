@@ -59,6 +59,10 @@ public class TypeWritable implements WritableComparable
     throw Py.TypeError("Expected int/float/str/tuple");
   }
 
+  public TypeWritable()
+  {
+  }
+
   public TypeWritable(PyObject obj)
   {
     CheckType(obj);
