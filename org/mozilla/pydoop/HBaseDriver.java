@@ -39,8 +39,7 @@ import org.python.core.PyObject;
 import org.python.core.PyIterator;
 
 public class HBaseDriver extends Configured implements Tool {
-  static PyObject mapfunc = PythonWrapper.get("map");
-  static PyObject reducefunc = PythonWrapper.get("reduce");
+  static PythonWrapper module = new PythonWrapper("CallJava.py");
 
   public static class WritableIterWrapper extends PyIterator
   {
@@ -84,7 +83,7 @@ public class HBaseDriver extends Configured implements Tool {
           new String(value_bytes),
           new ContextWrapper(context)
       };
-      mapfunc._jcall(jparams);
+      module.getFunction("map")._jcall(jparams);
     }
   }
 
@@ -96,7 +95,7 @@ public class HBaseDriver extends Configured implements Tool {
             new WritableIterWrapper(values.iterator()),
             new ContextWrapper(context)
         };
-        reducefunc._jcall(jparams);
+        module.getFunction("reduce")._jcall(jparams);
     }
   }
 
@@ -142,8 +141,10 @@ public class HBaseDriver extends Configured implements Tool {
     
     //    job.setOutputFormatClass(NullOutputFormat.class);   // because we aren't emitting anything from mapper
     job.setReducerClass(MyReducer.class);    // reducer class
+
+    boolean maponly = module.getFunction("reduce") == null;
     // set below to 0 to do a map-only job
-    job.setNumReduceTasks(reducefunc != null ? 1 : 0 );    // at least one, adjust as required
+    job.setNumReduceTasks(maponly ? 0 : 4 );    // at least one, adjust as required
 
 
     return job.waitForCompletion(true) ? 0 : 1;
