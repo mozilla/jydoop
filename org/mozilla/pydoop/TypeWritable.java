@@ -154,4 +154,11 @@ public class TypeWritable implements WritableComparable
   public int hashCode() {
     return value.hashCode();
   }
+
+  public String toString() {
+    if (value == null) {
+      return "null";
+    }
+    return value.toString();
+  }
 }
