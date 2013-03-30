@@ -3,6 +3,9 @@
 package org.mozilla.pydoop;
 
 import java.io.IOException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.StringTokenizer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -11,7 +14,10 @@ import java.util.List;
 import java.util.Iterator;
 import com.mozilla.util.Pair;
 import org.apache.hadoop.conf.Configuration;
+
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FileStatus;
 
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -27,14 +33,14 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.hbase.util.Bytes;
 import com.mozilla.hadoop.hbase.mapreduce.MultiScanTableMapReduceUtil;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.FileSystem;
 import org.python.core.PyObject;
 import org.python.core.PyIterator;
 
@@ -112,10 +118,12 @@ public class HBaseDriver extends Configured implements Tool {
     Configuration conf = getConf();
     conf.set("mapred.compress.map.output", "true");
     conf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.SnappyCodec");
+    FileSystem fs = FileSystem.get(conf);
+
     Job job = new Job(conf, "HBaseDriver");
     job.setJarByClass(HBaseDriver.class);     // class that contains mapper
     try {
-      FileSystem.get(getConf()).delete(outdir, true);
+      fs.delete(outdir, true);
       System.err.println("Deleted old " + args[1]);
     } catch(Exception e) {
     }
@@ -138,16 +146,50 @@ public class HBaseDriver extends Configured implements Tool {
                                           TypeWritable.class,             // mapper output key
                                           TypeWritable.class,             // mapper output value
                                           job);
-    
-    //    job.setOutputFormatClass(NullOutputFormat.class);   // because we aren't emitting anything from mapper
+
     job.setReducerClass(MyReducer.class);    // reducer class
+    job.setOutputFormatClass(SequenceFileOutputFormat.class);
+    job.setOutputKeyClass(TypeWritable.class);
+    job.setOutputValueClass(TypeWritable.class);
 
     boolean maponly = module.getFunction("reduce") == null;
     // set below to 0 to do a map-only job
     job.setNumReduceTasks(maponly ? 0 : 4 );    // at least one, adjust as required
 
 
-    return job.waitForCompletion(true) ? 0 : 1;
+    if (!job.waitForCompletion(true)) {
+      return 1;
+    }
+
+    // Now read the hadoop files and output a single local file from the results
+    FileOutputStream outfs = new FileOutputStream(args[1]);
+    PrintStream outps = new PrintStream(outfs);
+
+    FileStatus[] files = fs.listStatus(outdir);
+    for (FileStatus file : files) {
+      System.out.println("Found output file: " + file.getPath() + ", length " + file.getLen());
+
+      if (file.getLen() == 0) {
+        continue;
+      }
+      SequenceFile.Reader r = new SequenceFile.Reader(fs, file.getPath(), conf);
+
+      TypeWritable k = new TypeWritable();
+      TypeWritable v = new TypeWritable();
+      while (r.next(k, v)) {
+        // If this is a map-only job, the keys are usually not valuable so we default
+        // to printing only the value.
+        // TODO: tab-delimit tuples instead of just .toString on them
+        if (!maponly) {
+          outps.print(k.toString());
+          outps.print('\t');
+        }
+        outps.print(v.toString());
+        outps.println();
+      }
+    }
+    outps.close();
+    return 0;
   }
 
   public static void main(String[] args) throws Exception {
