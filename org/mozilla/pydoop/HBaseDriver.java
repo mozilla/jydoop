@@ -1,5 +1,4 @@
-//javac -classpath /usr/lib/hbase/lib/hadoop-core.jar:/usr/lib/hive/lib/commons-cli-1.2.jar:/usr/lib/hbase/hbase-0.90.6-cdh3u4.jar:akela-0.5-SNAPSHOT.jar   HBaseDriver.java  -d out  -Xlint:deprecation  && jar -cvf taras.jar -C out/ . 
-//  scan 'telemetry', {LIMIT => 1}
+/* -*- Mode: Java; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 package org.mozilla.pydoop;
 
 import java.io.IOException;
@@ -58,7 +57,7 @@ public class HBaseDriver extends Configured implements Tool {
 
     public PyObject __iternext__() {
       if (!iter.hasNext()) {
-	return null;
+        return null;
       }
       return iter.next().value;
     }

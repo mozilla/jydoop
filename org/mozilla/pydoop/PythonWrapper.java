@@ -1,3 +1,5 @@
+/* -*- Mode: Java; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+
 package org.mozilla.pydoop;
 import org.python.util.PythonInterpreter;
 import org.python.core.PyObject;
@@ -14,7 +16,7 @@ public class PythonWrapper {
 
     public PyObject __call__(PyObject args[], String keywords[]) {
       if (args[0].toString().endsWith(JSON_IMPORT_PATH_ENTRY)) {
-	return this;
+        return this;
       }
       throw Py.ImportError("unable to handle");
     }

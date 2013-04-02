@@ -1,3 +1,5 @@
+/* -*- Mode: Java; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+
 package org.mozilla.pydoop;
 
 import org.python.core.PyObject;
@@ -44,14 +46,14 @@ public class TypeWritable implements WritableComparable
       return;
     }
     if (obj instanceof PyInteger ||
-	obj instanceof PyLong ||
-	obj instanceof PyFloat ||
-	obj instanceof PyString) {
+        obj instanceof PyLong ||
+        obj instanceof PyFloat ||
+        obj instanceof PyString) {
       return;
     }
     if (obj instanceof PyTuple) {
       for (PyObject inner : ((PyTuple)obj).getArray()) {
-	CheckType(inner);
+        CheckType(inner);
       }
       return;
     }
@@ -77,7 +79,7 @@ public class TypeWritable implements WritableComparable
     }
 
     if (obj instanceof PyInteger ||
-	obj instanceof PyLong) {
+        obj instanceof PyLong) {
       out.writeByte(TYPE_INT);
       WritableUtils.writeVLong(out, obj.asLong());
       return;
@@ -99,7 +101,7 @@ public class TypeWritable implements WritableComparable
       out.writeByte(TYPE_TUPLE);
       WritableUtils.writeVInt(out, obj.__len__());
       for (int i = 0; i < obj.__len__(); ++i) {
-	WriteType(out, obj.__getitem__(i));
+        WriteType(out, obj.__getitem__(i));
       }
     }
 
@@ -121,10 +123,10 @@ public class TypeWritable implements WritableComparable
     case TYPE_INT: {
       long v = WritableUtils.readVLong(in);
       if (v > Integer.MAX_VALUE || v < Integer.MIN_VALUE) {
-	return new PyLong(v);
+        return new PyLong(v);
       }
       else {
-	return new PyInteger((int) v);
+        return new PyInteger((int) v);
       }
     }
     case TYPE_FLOAT:
@@ -135,7 +137,7 @@ public class TypeWritable implements WritableComparable
       int l = WritableUtils.readVInt(in);
       PyObject[] objs = new PyObject[l];
       for (int i = 0; i < l; ++i) {
-	objs[i] = ReadObject(in);
+        objs[i] = ReadObject(in);
       }
       return new PyTuple(objs);
     }
