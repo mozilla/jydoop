@@ -1,63 +1,47 @@
 defaultglobals = dict(globals())
 
+import sys
+
 class LocalContext:
-    def __init__(self):
+    def __init__(self, map_only = False):
         self.result = {}
+        self.map_only = map_only
 
     def write(self, key, value):
-        self.result.setdefault(key, []).append(value)
+        if self.map_only:
+            print "%s %s" % (key, value)
+            return
+        try:
+            self.result[key].append(value)
+        except KeyError:
+            self.result[key] = [value]
 
-    def __iter__(self):
-        for k, values in self.result.iteritems():
+    def dump(self):
+        for key, values in self.result.iteritems():
             for v in values:
-                yield k, v
-
-# By default, if the job has a reduce function, we want to print both the key and the value.
-# If no reduction is happening, users usually don't care about the key.
-def outputwithkey(rlist):
-    for k, v in rlist:
-        print "%s,%s" % (k, v)
-
-def outputnokey(rlist):
-    for k, v in rlist:
-        print v
+                print "%s %s" % (key, v)
 
 def map_reduce(module, fd):
     reducefunc = getattr(module, 'reduce', None)
-    mapfunc = getattr(module, 'map')
 
-    context = LocalContext()
+    context = LocalContext(reducefunc == None)
 
-    # We make fake keys by keeping track of the file offset from the incoming
-    # file.
     total = 0;
-    for line in fd:
-        if len(line) == 0:
-            continue
-        mapfunc(str(total), line, context)
-        total += len(line)
+    while True:
+        l = fd.readline()
+        length = len(l)
+        total += length
+        if length == 0:
+            break
+        getattr(module, 'map')(str(total), l, context)
 
-    if reducefunc:
-        reduced_context = LocalContext()
-        for key, values in context.result.iteritems():
-            module.reduce(key, values, reduced_context)
-        context = reduced_context
-
-    if hasattr(module, 'output'):
-        outputfunc = module.output
-    elif reducefunc:
-        outputfunc = outputwithkey
-    else:
-        outputfunc = outputnokey
-
-    outputfunc(iter(context))
+    reduced_context = LocalContext()
+    for key, values in context.result.iteritems():
+        reducefunc(key, values, reduced_context)
+    reduced_context.dump()
     
 if __name__ == '__main__':
-    import imp, sys
-
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "Usage: FileDriver.py <jobscript.py> <input.data or ->"
-        sys.exit(1)
+    import imp
 
     modulepath, filepath = sys.argv[1:]
 

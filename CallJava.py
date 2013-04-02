@@ -30,7 +30,8 @@ def map(key, value, context):
         pass
 
     if record:
-        context.write(key, value)
+        outkey = Text(value)
+        context.write(outkey, Text())
     
 #def reduce(key, values, context):
 #    context.write(key, Text())
