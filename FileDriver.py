@@ -7,7 +7,7 @@ class LocalContext:
 
     def write(self, key, value):
         self.result.setdefault(key, []).append(value)
-        if self.combinefunc and self.result[key].length > 5:
+        if self.combinefunc and len(self.result[key]) > 5:
             items = self.result.pop(key)
             self.combinefunc(key, items, self)
 
@@ -28,9 +28,10 @@ def outputnokey(rlist):
 
 def map_reduce(module, fd):
     reducefunc = getattr(module, 'reduce', None)
+    combinefunc = getattr(module, 'combine', None)
     mapfunc = getattr(module, 'map')
 
-    context = LocalContext()
+    context = LocalContext(combinefunc)
 
     # We make fake keys by keeping track of the file offset from the incoming
     # file.
