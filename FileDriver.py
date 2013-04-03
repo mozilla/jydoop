@@ -16,7 +16,7 @@ class LocalContext:
 # If no reduction is happening, users usually don't care about the key.
 def outputwithkey(rlist):
     for k, v in rlist:
-        print "%s,%s" % (k, v)
+        print "%s\t%s" % (k, v)
 
 def outputnokey(rlist):
     for k, v in rlist:
