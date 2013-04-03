@@ -11,8 +11,11 @@ comma:=,
 JAVA_SOURCE=$(addprefix org/mozilla/pydoop/,PythonWrapper.java TypeWritable.java HBaseDriver.java)
 TASK=HBaseDriver
 ARGS=input output
-SCRIPT=scripts/CallJava.py
+SCRIPT=$(error Must specify SCRIPT=)
 all: driver.jar
+
+check: driver.jar
+	java -cp driver.jar:$(CP) org.python.util.jython test.py
 
 run: driver.jar
 	java -cp driver.jar:$(CP) org.mozilla.pydoop.$(TASK)
