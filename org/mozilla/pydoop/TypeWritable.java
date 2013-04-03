@@ -93,7 +93,11 @@ public class TypeWritable implements WritableComparable
 
     if (obj instanceof PyString) {
       out.writeByte(TYPE_STRING);
-      out.writeUTF(obj.asString());
+      // DataOutput.writeUTF has a 64k limit. We exceed that with telemetry data, so
+      // we do our own thing...
+      byte[] b = obj.asString().getBytes("UTF-8");
+      out.writeInt(b.length);
+      out.write(b);
       return;
     }
 
@@ -132,7 +136,10 @@ public class TypeWritable implements WritableComparable
     case TYPE_FLOAT:
       return new PyFloat(in.readDouble());
     case TYPE_STRING:
-      return new PyString(in.readUTF());
+      int blen = in.readInt();
+      byte[] bytes = new byte[blen];
+      in.readFully(bytes);
+      return new PyString(new String(bytes, "UTF-8"));
     case TYPE_TUPLE:
       int l = WritableUtils.readVInt(in);
       PyObject[] objs = new PyObject[l];
