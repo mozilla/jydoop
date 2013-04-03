@@ -150,6 +150,7 @@ public class HBaseDriver extends Configured implements Tool {
     job.setOutputFormatClass(SequenceFileOutputFormat.class);
     job.setOutputKeyClass(TypeWritable.class);
     job.setOutputValueClass(TypeWritable.class);
+    job.setSortComparatorClass(TypeWritable.Comparator.class);
 
     boolean maponly = module.getFunction("reduce") == null;
     // set below to 0 to do a map-only job
