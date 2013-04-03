@@ -2,11 +2,6 @@
 #python FileDriver.py scripts/anr.py test.data
 import sys
 import json
-try:
-    import org.apache.hadoop.io.Text as Text;
-    import java.lang.System as System
-except ImportError: #cpython
-    Text = str
 
 # This mapper is just a filter: only records which have an android hang report
 # are included in the result.

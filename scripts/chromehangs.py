@@ -1,17 +1,14 @@
 import sys
 import json
-try:
-    import org.apache.hadoop.io.Text as Text;
-    import java.lang.System as System
-except ImportError: #cpython
-    Text = str
+
+"""Map-only script records everything with a chromehang or a late-write entry."""
 
 def map(key, value, context):
     try:
         payload = json.loads(value)
     except:
-        e = sys.exc_info()[0]
-        context.write(Text("exception:%s" % e), Text(key))
+        e = str(sys.exc_info()[1])
+        context.write(key, "exception:%s for key %s" % (e, key))
         return
 
     record = False
@@ -31,6 +28,3 @@ def map(key, value, context):
 
     if record:
         context.write(key, value)
-    
-#def reduce(key, values, context):
-#    context.write(key, Text())
