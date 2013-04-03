@@ -166,8 +166,6 @@ public class HBaseDriver extends Configured implements Tool {
 
     FileStatus[] files = fs.listStatus(outdir);
     for (FileStatus file : files) {
-      System.out.println("Found output file: " + file.getPath() + ", length " + file.getLen());
-
       if (file.getLen() == 0) {
         continue;
       }
