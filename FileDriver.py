@@ -1,11 +1,15 @@
 defaultglobals = dict(globals())
 
 class LocalContext:
-    def __init__(self):
+    def __init__(self, combinefunc=None):
         self.result = {}
+        self.combinefunc = combinefunc
 
     def write(self, key, value):
         self.result.setdefault(key, []).append(value)
+        if self.combinefunc and len(self.result[key]) > 5:
+            items = self.result.pop(key)
+            self.combinefunc(key, items, self)
 
     def __iter__(self):
         for k, values in self.result.iteritems():
@@ -16,7 +20,7 @@ class LocalContext:
 # If no reduction is happening, users usually don't care about the key.
 def outputwithkey(rlist):
     for k, v in rlist:
-        print "%s,%s" % (k, v)
+        print "%s\t%s" % (k, v)
 
 def outputnokey(rlist):
     for k, v in rlist:
@@ -24,9 +28,10 @@ def outputnokey(rlist):
 
 def map_reduce(module, fd):
     reducefunc = getattr(module, 'reduce', None)
+    combinefunc = getattr(module, 'combine', None)
     mapfunc = getattr(module, 'map')
 
-    context = LocalContext()
+    context = LocalContext(combinefunc)
 
     # We make fake keys by keeping track of the file offset from the incoming
     # file.
@@ -34,7 +39,7 @@ def map_reduce(module, fd):
     for line in fd:
         if len(line) == 0:
             continue
-        mapfunc(str(total), line, context)
+        mapfunc('fake_key_%s' % total, line, context)
         total += len(line)
 
     if reducefunc:

@@ -92,6 +92,17 @@ public class HBaseDriver extends Configured implements Tool {
     }
   }
 
+  public static class MyCombiner extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable> {
+    public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
+      Object jparams[] = new Object[] {
+        key.value,
+        new WritableIterWrapper(values.iterator()),
+        new ContextWrapper(context)
+      };
+      module.getFunction("combine")._jcall(jparams);
+    }
+  }
+
   public static class MyReducer extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable>  {
 
     public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
@@ -156,6 +167,9 @@ public class HBaseDriver extends Configured implements Tool {
     // set below to 0 to do a map-only job
     job.setNumReduceTasks(maponly ? 0 : 4 );    // at least one, adjust as required
 
+    if (module.getFunction("combine") != null) {
+      job.setCombinerClass(MyCombiner.class);
+    }
 
     if (!job.waitForCompletion(true)) {
       return 1;
