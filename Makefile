@@ -21,7 +21,6 @@ run: driver.jar
 	java -cp driver.jar:$(CP) org.mozilla.pydoop.$(TASK)
 
 hadoop: driver.jar
-#	-hadoop fs -rmr /user/tglek/output
 	time hadoop jar $< org.mozilla.pydoop.$(TASK) -libjars $(subst :,$(comma),$(HADOOP_CLASSPATH)) $(ARGS)
 
 out/scripts:
