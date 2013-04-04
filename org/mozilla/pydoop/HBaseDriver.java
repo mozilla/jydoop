@@ -8,10 +8,10 @@ import java.io.PrintStream;
 import java.util.StringTokenizer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
-import com.mozilla.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -35,13 +35,14 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.hbase.util.Bytes;
-import com.mozilla.hadoop.hbase.mapreduce.MultiScanTableMapReduceUtil;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.python.core.PyObject;
 import org.python.core.PyIterator;
+
+import org.apache.commons.lang.StringUtils;
 
 public class HBaseDriver extends Configured implements Tool {
   private static PythonWrapper initPythonWrapper(String pathname, Job job) throws IOException
@@ -153,28 +154,24 @@ public class HBaseDriver extends Configured implements Tool {
   private HBaseDriver() {}                               // singleton
 
   public int run(String[] args) throws Exception {
-    if (args.length != 6) {
-      System.err.println("Usage: <script_file> <hbase_name> <out_file> yyyyMMdd(start) yyyyMMdd(stop) yyyyMMdd(format)");
+    if (args.length < 2) {
+      System.err.println("Usage: <script_file> <out_file> <script_options...>");
       ToolRunner.printGenericCommandUsage(System.err);
       return -1;
     }
 
     String scriptFile = args[0];
-    String tableName = args[1];
-    String outPath = args[2];
-    String startDate = args[3];
-    String stopDate = args[4];
-    String dateFormat = args[5];
-    
+    String outPath = args[1];
+
     Path outdir = new Path(outPath);
     Configuration conf = getConf();
     conf.set("mapred.compress.map.output", "true");
     conf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.SnappyCodec");
     FileSystem fs = FileSystem.get(conf);
 
-    Job job = new Job(conf, String.format("HBaseDriver: %s %s %s %s %s",
-                                          scriptFile, tableName,
-                                          startDate, stopDate, dateFormat));
+    String jobname = "HBaseDriver: " + StringUtils.join(args);
+
+    Job job = new Job(conf, jobname);
     job.setJarByClass(HBaseDriver.class);     // class that contains mapper
     try {
       fs.delete(outdir, true);
@@ -182,23 +179,10 @@ public class HBaseDriver extends Configured implements Tool {
     } catch(Exception e) {
     }
     FileOutputFormat.setOutputPath(job, outdir);  // adjust directories as required
-    
-    SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
-    Calendar startCal = Calendar.getInstance();
-    startCal.setTime(sdf.parse(startDate));
-    Calendar endCal = Calendar.getInstance();
-    endCal.setTime(sdf.parse(stopDate));
-    List<Pair<String,String>> columns = new ArrayList<Pair<String,String>>(); // family:qualifier
-    columns.add(new Pair<String,String>("data", "json"));
-    Scan[] scans = MultiScanTableMapReduceUtil.generateBytePrefixScans(startCal, endCal, dateFormat,columns,500, false);
 
-    MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(
-                                          tableName,        // input HBase table name
-                                          scans,             // Scan instance to control CF and attribute selection
-                                          MyMapper.class,   // mapper
-                                          TypeWritable.class,             // mapper output key
-                                          TypeWritable.class,             // mapper output value
-                                          job);
+    job.setMapOutputKeyClass(TypeWritable.class);
+    job.setMapOutputValueClass(TypeWritable.class);
+    job.setMapperClass(MyMapper.class);
 
     job.setReducerClass(MyReducer.class);    // reducer class
     job.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -211,6 +195,8 @@ public class HBaseDriver extends Configured implements Tool {
     if (!job.getConfiguration().get("org.mozilla.pydoop.scriptname").equals(scriptFile)) {
       throw new java.lang.NullPointerException("Whoops");
     }
+
+    module.getFunction("setupjob")._jcall(new Object[] { job, Arrays.copyOfRange(args, 2, args.length) });
 
     boolean maponly = module.getFunction("reduce") == null;
     // set below to 0 to do a map-only job

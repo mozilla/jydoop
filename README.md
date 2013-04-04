@@ -25,5 +25,5 @@ Python scripts are wrapped into driver.jar with the Java driver.
 
 For example, to count the distribution of operating systems on Mozilla telemetry data for 30-March-2013, run:
 ````
-make ARGS="scripts/osdistribution.py telemetry outputfile 20130330 20133030" hadoop
+make ARGS="scripts/osdistribution.py outputfile 20130330 20133030" hadoop
 ````

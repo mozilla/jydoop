@@ -3,6 +3,20 @@
 import json
 import random
 import pydoop
+import telemetryutils
+
+# The setupjob function is used to set up the hadoop job correctly. In
+# almost all cases you should use telemetryutils.setupjob (or in the future
+# crashstatsutils.setupjob or healthreportutils.setupjob)
+
+setupjob = telemetryutils.setupjob
+
+# The map function is required, and is called once for each incoming record.
+# The map function may choose to call context.write(key, value) any number
+# of times.
+#
+# Keys and values are limited to None, strings, ints, floats, and tuples of
+# these primitive values.
 
 def map(k, v, cx):
     if random.random() > 0.05:

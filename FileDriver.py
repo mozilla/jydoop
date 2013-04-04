@@ -27,9 +27,18 @@ def outputnokey(rlist):
         print v
 
 def map_reduce(module, fd):
+    setupfunc = getattr(module, 'setupjob', None)
+    mapfunc = getattr(module, 'map', None)
     reducefunc = getattr(module, 'reduce', None)
     combinefunc = getattr(module, 'combine', None)
-    mapfunc = getattr(module, 'map')
+
+    if setupfunc is None or not callable(setupfunc):
+        print >>sys.stderr, "Analysis script doesn't define the required function `setupjob`."
+        sys.exit(1)
+
+    if mapfunc is None or not callable(mapfunc):
+        print >>sys.stderr, "Analysis script doesn't define the required function `map`."
+        sys.exit(1)
 
     context = LocalContext(combinefunc)
 
