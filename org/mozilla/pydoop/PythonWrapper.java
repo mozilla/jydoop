@@ -6,6 +6,7 @@ import org.python.core.PyObject;
 import org.python.core.PySystemState;
 import org.python.core.Py;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.File;
 import java.net.URL;
@@ -42,7 +43,7 @@ public class PythonWrapper {
     }
   }
 
-  PythonWrapper(String pathname) throws java.io.IOException {
+  PythonWrapper(String pathname) throws IOException {
     interp = new PythonInterpreter();
 
     // Add the location of the script to sys.path so that relative imports work
@@ -50,27 +51,22 @@ public class PythonWrapper {
     URL scripturl = this.getClass().getResource("/" + pathname);
     File syspathentry;
 
-    if (scripturl.getProtocol().equals("file")) {
-      try {
+    try {
+      if (scripturl.getProtocol().equals("file")) {
         syspathentry = new File(scripturl.toURI());
       }
-      catch (java.net.URISyntaxException e) {
-        throw new java.io.IOException(e);
-      }
-    }
-    else if (scripturl.getProtocol().equals("jar")) {
-      JarURLConnection jaruri = (JarURLConnection) scripturl.openConnection();
+      else if (scripturl.getProtocol().equals("jar")) {
+        JarURLConnection jaruri = (JarURLConnection) scripturl.openConnection();
 
-      try {
         File jarfile = new File(jaruri.getJarFileURL().toURI());
         syspathentry = new File(jarfile, jaruri.getEntryName());
       }
-      catch (java.net.URISyntaxException e) {
-        throw new java.io.IOException(e);
+      else {
+        throw new java.lang.UnsupportedOperationException("Cannot get file path for URL: " + scripturl);
       }
     }
-    else {
-      throw new java.lang.UnsupportedOperationException("Cannot get file path for URL: " + scripturl);
+    catch (java.net.URISyntaxException e) {
+      throw new IOException(e);
     }
 
     interp.getSystemState().path.insert(0, Py.newString(syspathentry.getParent()));

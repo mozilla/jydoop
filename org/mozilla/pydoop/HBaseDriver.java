@@ -44,13 +44,13 @@ import org.python.core.PyObject;
 import org.python.core.PyIterator;
 
 public class HBaseDriver extends Configured implements Tool {
-  private static PythonWrapper initPythonWrapper(String pathname, Job job) throws java.io.IOException
+  private static PythonWrapper initPythonWrapper(String pathname, Job job) throws IOException
   {
     job.getConfiguration().set("org.mozilla.pydoop.scriptname", pathname);
     return new PythonWrapper(pathname);
   }
 
-  static private PythonWrapper getPythonWrapper(Configuration conf) throws java.io.IOException
+  static private PythonWrapper getPythonWrapper(Configuration conf) throws IOException
   {
     String scriptName = conf.get("org.mozilla.pydoop.scriptname");
     if (null == scriptName) {
