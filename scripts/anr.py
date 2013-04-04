@@ -1,4 +1,4 @@
-#make hadoop ARGS="telemetry anr 20130313 20130313 yyyyMMdd" SCRIPT=scripts/anr.py
+#make hadoop ARGS="scripts/anr.py telemetry anr 20130313 20130313 yyyyMMdd"
 #python FileDriver.py scripts/anr.py test.data
 import sys
 import json
