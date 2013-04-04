@@ -7,8 +7,9 @@ import org.python.core.PySystemState;
 import org.python.core.Py;
 
 import java.io.InputStream;
+import java.io.File;
 import java.net.URL;
-import java.net.URLClassLoader;
+import java.net.JarURLConnection;
 
 public class PythonWrapper {
   private PythonInterpreter interp;
@@ -41,8 +42,38 @@ public class PythonWrapper {
     }
   }
 
-  PythonWrapper(String pathname) {
+  PythonWrapper(String pathname) throws java.io.IOException {
     interp = new PythonInterpreter();
+
+    // Add the location of the script to sys.path so that relative imports work
+    
+    URL scripturl = this.getClass().getResource("/" + pathname);
+    File syspathentry;
+
+    if (scripturl.getProtocol().equals("file")) {
+      try {
+        syspathentry = new File(scripturl.toURI());
+      }
+      catch (java.net.URISyntaxException e) {
+        throw new java.io.IOException(e);
+      }
+    }
+    else if (scripturl.getProtocol().equals("jar")) {
+      JarURLConnection jaruri = (JarURLConnection) scripturl.openConnection();
+
+      try {
+        File jarfile = new File(jaruri.getJarFileURL().toURI());
+        syspathentry = new File(jarfile, jaruri.getEntryName());
+      }
+      catch (java.net.URISyntaxException e) {
+        throw new java.io.IOException(e);
+      }
+    }
+    else {
+      throw new java.lang.UnsupportedOperationException("Cannot get file path for URL: " + scripturl);
+    }
+
+    interp.getSystemState().path.insert(0, Py.newString(syspathentry.getParent()));
 
     // Use an import hook so that "import json" uses Jyson instead of the very
     // slow builtin module.
@@ -50,11 +81,7 @@ public class PythonWrapper {
     interp.getSystemState().path_hooks.insert(0, new JSONImporter());
 
     // Get the the script path from our loader
-
-    InputStream pythonstream = this.getClass().getResourceAsStream("/" + pathname);
-    if (null == pythonstream) {
-      throw new java.lang.NullPointerException("pythonstream");
-    }
+    InputStream pythonstream = scripturl.openStream();
     interp.execfile(pythonstream, pathname);
   }
   public PyObject getFunction(String name) {
