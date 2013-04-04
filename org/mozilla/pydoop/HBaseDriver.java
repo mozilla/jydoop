@@ -44,7 +44,20 @@ import org.python.core.PyObject;
 import org.python.core.PyIterator;
 
 public class HBaseDriver extends Configured implements Tool {
-  static PythonWrapper module = new PythonWrapper("CallJava.py");
+  private PythonWrapper initPythonWrapper(String pathname)
+  {
+    getConf().set("org.mozilla.pydoop.scriptname", pathname);    
+    return new PythonWrapper(pathname);
+  }
+
+  static private PythonWrapper getPythonWrapper(Configuration conf)
+  {
+    String scriptName = conf.get("org.mozilla.pydoop.scriptname");
+    if (null == scriptName) {
+      throw new java.lang.NullPointerException("scriptName");
+    }
+    return new PythonWrapper(scriptName);
+  }
 
   public static class WritableIterWrapper extends PyIterator
   {
@@ -80,6 +93,13 @@ public class HBaseDriver extends Configured implements Tool {
   }
 
   public static class MyMapper extends TableMapper<TypeWritable, TypeWritable>  {
+    private PyObject mapfunc;
+
+    public void setup(Context context) throws IOException, InterruptedException
+    {
+      super.setup(context);
+      mapfunc = getPythonWrapper(context.getConfiguration()).getFunction("map");
+    }
 
     public void map(ImmutableBytesWritable key, Result value, Context context) throws IOException, InterruptedException {
       byte[] value_bytes =  value.getValue("data".getBytes(), "json".getBytes());
@@ -88,22 +108,37 @@ public class HBaseDriver extends Configured implements Tool {
           new String(value_bytes),
           new ContextWrapper(context)
       };
-      module.getFunction("map")._jcall(jparams);
+      mapfunc._jcall(jparams);
     }
   }
 
   public static class MyCombiner extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable> {
+    private PyObject combinefunc;
+
+    public void setup(Context context) throws IOException, InterruptedException
+    {
+      super.setup(context);
+      combinefunc = getPythonWrapper(context.getConfiguration()).getFunction("combine");
+    }
+
     public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
       Object jparams[] = new Object[] {
         key.value,
         new WritableIterWrapper(values.iterator()),
         new ContextWrapper(context)
       };
-      module.getFunction("combine")._jcall(jparams);
+      combinefunc._jcall(jparams);
     }
   }
 
   public static class MyReducer extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable>  {
+    private PyObject reducefunc;
+
+    public void setup(Context context) throws IOException, InterruptedException
+    {
+      super.setup(context);
+      reducefunc = getPythonWrapper(context.getConfiguration()).getFunction("reduce");
+    }
 
     public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
         Object jparams[] = new Object[] {
@@ -111,20 +146,27 @@ public class HBaseDriver extends Configured implements Tool {
             new WritableIterWrapper(values.iterator()),
             new ContextWrapper(context)
         };
-        module.getFunction("reduce")._jcall(jparams);
+        reducefunc._jcall(jparams);
     }
   }
 
   private HBaseDriver() {}                               // singleton
 
   public int run(String[] args) throws Exception {
-    if (args.length != 5) {
-      System.err.println("Usage: wordcount <hbase_name> <out_file> yyyyMMdd(start) yyyyMMdd(stop) yyyyMMdd(format)");
+    if (args.length != 6) {
+      System.err.println("Usage: <script_file> <hbase_name> <out_file> yyyyMMdd(start) yyyyMMdd(stop) yyyyMMdd(format)");
       ToolRunner.printGenericCommandUsage(System.out);
       return -1;
     }
+
+    String scriptFile = args[0];
+    String tableName = args[1];
+    String outPath = args[2];
+    String startDate = args[3];
+    String stopDate = args[4];
+    String dateFormat = args[5];
     
-    Path outdir = new Path(args[1]);
+    Path outdir = new Path(outPath);
     Configuration conf = getConf();
     conf.set("mapred.compress.map.output", "true");
     conf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.SnappyCodec");
@@ -134,23 +176,22 @@ public class HBaseDriver extends Configured implements Tool {
     job.setJarByClass(HBaseDriver.class);     // class that contains mapper
     try {
       fs.delete(outdir, true);
-      System.err.println("Deleted old " + args[1]);
+      System.err.println("Deleted old " + outPath);
     } catch(Exception e) {
     }
     FileOutputFormat.setOutputPath(job, outdir);  // adjust directories as required
     
-    String dateFormat = args[4];//"yyyyMMdd";
     SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
     Calendar startCal = Calendar.getInstance();
-    startCal.setTime(sdf.parse(args[2]));
+    startCal.setTime(sdf.parse(startDate));
     Calendar endCal = Calendar.getInstance();
-    endCal.setTime(sdf.parse(args[3]));
+    endCal.setTime(sdf.parse(stopDate));
     List<Pair<String,String>> columns = new ArrayList<Pair<String,String>>(); // family:qualifier
     columns.add(new Pair<String,String>("data", "json"));
     Scan[] scans = MultiScanTableMapReduceUtil.generateBytePrefixScans(startCal, endCal, dateFormat,columns,500, false);
 
     MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(
-                                          args[0],        // input HBase table name
+                                          tableName,        // input HBase table name
                                           scans,             // Scan instance to control CF and attribute selection
                                           MyMapper.class,   // mapper
                                           TypeWritable.class,             // mapper output key
@@ -162,6 +203,8 @@ public class HBaseDriver extends Configured implements Tool {
     job.setOutputKeyClass(TypeWritable.class);
     job.setOutputValueClass(TypeWritable.class);
     job.setSortComparatorClass(TypeWritable.Comparator.class);
+
+    PythonWrapper module = initPythonWrapper(scriptFile);
 
     boolean maponly = module.getFunction("reduce") == null;
     // set below to 0 to do a map-only job
@@ -176,7 +219,7 @@ public class HBaseDriver extends Configured implements Tool {
     }
 
     // Now read the hadoop files and output a single local file from the results
-    FileOutputStream outfs = new FileOutputStream(args[1]);
+    FileOutputStream outfs = new FileOutputStream(outPath);
     PrintStream outps = new PrintStream(outfs);
 
     FileStatus[] files = fs.listStatus(outdir);

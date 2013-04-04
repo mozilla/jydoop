@@ -7,6 +7,8 @@ import org.python.core.PySystemState;
 import org.python.core.Py;
 
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 public class PythonWrapper {
   private PythonInterpreter interp;
@@ -48,7 +50,16 @@ public class PythonWrapper {
     interp.getSystemState().path_hooks.insert(0, new JSONImporter());
 
     // Get the pathname off of the classpath
+
+    System.err.println("PythonWrapper pathname: " + pathname);
+
+    URL rurl = this.getClass().getResource("/" + pathname);
+    System.err.println("rurl: " + rurl);
+
     InputStream pythonstream = this.getClass().getResourceAsStream("/" + pathname);
+    if (null == pythonstream) {
+      throw new java.lang.NullPointerException("pythonstream");
+    }
     interp.execfile(pythonstream, pathname);
   }
   public PyObject getFunction(String name) {
