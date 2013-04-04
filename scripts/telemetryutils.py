@@ -26,8 +26,6 @@ def setupjob(job, args):
     enddate = Calendar.getInstance()
     enddate.setTime(sdf.parse(args[1]))
 
-    print "startdate: %r enddate: %r" % (startdate, enddate)
-
     columns = [com.mozilla.util.Pair('data', 'json')]
     scans = MSTMRU.generateBytePrefixScans(startdate, enddate, dateformat,
                                            columns, 500, False)

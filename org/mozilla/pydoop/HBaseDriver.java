@@ -169,7 +169,7 @@ public class HBaseDriver extends Configured implements Tool {
     conf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.SnappyCodec");
     FileSystem fs = FileSystem.get(conf);
 
-    String jobname = "HBaseDriver: " + StringUtils.join(args);
+    String jobname = "HBaseDriver: " + StringUtils.join(args, " ");
 
     Job job = new Job(conf, jobname);
     job.setJarByClass(HBaseDriver.class);     // class that contains mapper
