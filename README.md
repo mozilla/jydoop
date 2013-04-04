@@ -1,31 +1,29 @@
-=Purpose
-Querying json with java is too much work. Doing in Python allows for easier local development + testing.
+#pydoop: hadoop map-reduce in Python
 
-Idea is that one keeps boilerplate in java and does important things in python.
+##Purpose
+Querying hadoop/hbase using custom java classes is complicated and tedious. It's very difficult to test and debug analyses.
 
-To test scripts, use PythonDriver.py:
+Writing analyses in Python allows for easier local development + testing without having to set up hadoop or hbase.
+
+##Writing Scripts
+To test scripts, use locally saved sample data and PythonDriver.py:
 ```
-python PythonDriver.py CallJava.py log > log.out
+python PythonDriver.py script/osdistribution.py saveddata > analysis.out
 ```
-where log is a newline-separated json dump. See CallJava.py for an example mapreduce job with normal python and jyson.
+where `saveddata` is a newline-separated json dump. See the examples in `scripts/` for map-only or map-reduce jobs.
 
+##Production Setup
 
-=Packaging
-Python script gets wrapped into driver.jar with the HBaseDriver.
-
-To process files do:
-````
-make hadoop ARGS="input output" TASK=HDFSDriver SCRIPT=mypythonfile.py
-````
-To process hbase:
-```
-make hadoop ARGS="telemetry output 201302281 201302282 yyyyMMddk" SCRIPT=mypythonfile.py
-```
-python script has to define a map and (optionally) reduce function. If reduce function is not present hadoop will not do a reduce, which can save a lot of time for simple data dumps.
-
-mypythonfile.py can be a file outside the tree.
-
-Note, dependency jars can be fetched with
+Fetch dependent JARs using
 ```
 make download
 ```
+
+##Running an Job
+
+Python scripts are wrapped into driver.jar with the Java driver.
+
+For example, to count the distribution of operating systems on Mozilla telemetry data for 30-March-2013, run:
+````
+make ARGS="telemetry outputfile 20130330 20133030" SCRIPT=scripts/osdistribution.py hadoop
+````
