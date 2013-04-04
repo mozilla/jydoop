@@ -49,12 +49,7 @@ public class PythonWrapper {
     interp.getSystemState().path.insert(0, Py.newString(JSONImporter.JSON_IMPORT_PATH_ENTRY));
     interp.getSystemState().path_hooks.insert(0, new JSONImporter());
 
-    // Get the pathname off of the classpath
-
-    System.err.println("PythonWrapper pathname: " + pathname);
-
-    URL rurl = this.getClass().getResource("/" + pathname);
-    System.err.println("rurl: " + rurl);
+    // Get the the script path from our loader
 
     InputStream pythonstream = this.getClass().getResourceAsStream("/" + pathname);
     if (null == pythonstream) {

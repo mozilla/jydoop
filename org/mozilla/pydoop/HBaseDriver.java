@@ -44,9 +44,9 @@ import org.python.core.PyObject;
 import org.python.core.PyIterator;
 
 public class HBaseDriver extends Configured implements Tool {
-  private PythonWrapper initPythonWrapper(String pathname)
+  private static PythonWrapper initPythonWrapper(String pathname, Job job)
   {
-    getConf().set("org.mozilla.pydoop.scriptname", pathname);    
+    job.getConfiguration().set("org.mozilla.pydoop.scriptname", pathname);
     return new PythonWrapper(pathname);
   }
 
@@ -155,7 +155,7 @@ public class HBaseDriver extends Configured implements Tool {
   public int run(String[] args) throws Exception {
     if (args.length != 6) {
       System.err.println("Usage: <script_file> <hbase_name> <out_file> yyyyMMdd(start) yyyyMMdd(stop) yyyyMMdd(format)");
-      ToolRunner.printGenericCommandUsage(System.out);
+      ToolRunner.printGenericCommandUsage(System.err);
       return -1;
     }
 
@@ -204,7 +204,11 @@ public class HBaseDriver extends Configured implements Tool {
     job.setOutputValueClass(TypeWritable.class);
     job.setSortComparatorClass(TypeWritable.Comparator.class);
 
-    PythonWrapper module = initPythonWrapper(scriptFile);
+    PythonWrapper module = initPythonWrapper(scriptFile, job);
+
+    if (!job.getConfiguration().get("org.mozilla.pydoop.scriptname").equals(scriptFile)) {
+      throw new java.lang.NullPointerException("Whoops");
+    }
 
     boolean maponly = module.getFunction("reduce") == null;
     // set below to 0 to do a map-only job
