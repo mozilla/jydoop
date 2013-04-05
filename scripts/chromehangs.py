@@ -1,5 +1,8 @@
 import sys
 import json
+import telemetryutils
+
+setupjob = telemetryutils.setupjob
 
 """Map-only script records everything with a chromehang or a late-write entry."""
 
