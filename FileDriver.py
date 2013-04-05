@@ -67,7 +67,7 @@ def map_reduce(module, fd):
     outputfunc(iter(context))
     
 if __name__ == '__main__':
-    import imp, sys
+    import imp, sys, os
 
     if len(sys.argv) != 3:
         print >>sys.stderr, "Usage: FileDriver.py <jobscript.py> <input.data or ->"
@@ -81,6 +81,8 @@ if __name__ == '__main__':
         fd = open(filepath)
 
     modulefd = open(modulepath)
+
+    sys.path.insert(0, os.path.dirname(modulepath))
 
     module = imp.load_module('pydoop_main', modulefd, modulepath, ('.py', 'U', 1))
     map_reduce(module, fd)
