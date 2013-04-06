@@ -3,8 +3,8 @@
 package org.mozilla.pydoop;
 import org.python.util.PythonInterpreter;
 import org.python.core.PyObject;
-import org.python.core.PySystemState;
 import org.python.core.Py;
+import org.python.core.PyType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,8 +34,7 @@ public class PythonWrapper {
     }
 
     public PyObject load_module(String name) {
-      PyObject mod = org.python.core.imp.importName("com.xhaus.jyson.JysonCodec", true);
-      return mod.__getattr__("xhaus").__getattr__("jyson").__getattr__("JysonCodec");
+      return PyType.fromClass(JacksonWrapper.class);
     }
 
     public String toString() {
