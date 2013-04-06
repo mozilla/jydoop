@@ -1,0 +1,7 @@
+*.pyc
+*~
+out
+jython-standalone-2.7-b1.jar
+jackson-core-2.1.4.jar
+driver.jar
+akela-0.5-SNAPSHOT.jar
