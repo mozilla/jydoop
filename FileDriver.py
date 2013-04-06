@@ -23,6 +23,8 @@ class LocalContext:
         Put the combine results back together with any uncombined map
         results.
         """
+        if self.combinefunc is None:
+            return
         for k, vlist in self.combined.result.iteritems():
             for v in vlist:
                 self.result.setdefault(k, []).append(v)
