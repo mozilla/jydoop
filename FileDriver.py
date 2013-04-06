@@ -4,17 +4,30 @@ class LocalContext:
     def __init__(self, combinefunc=None):
         self.result = {}
         self.combinefunc = combinefunc
+        if combinefunc is not None:
+            self.combined = LocalContext()
 
     def write(self, key, value):
         self.result.setdefault(key, []).append(value)
         if self.combinefunc and len(self.result[key]) > 5:
             items = self.result.pop(key)
-            self.combinefunc(key, items, self)
+            self.combinefunc(key, items, self.combined)
 
     def __iter__(self):
         for k, values in self.result.iteritems():
             for v in values:
                 yield k, v
+
+    def finish(self):
+        """
+        Put the combine results back together with any uncombined map
+        results.
+        """
+        if self.combinefunc is None:
+            return
+        for k, vlist in self.combined.result.iteritems():
+            for v in vlist:
+                self.result.setdefault(k, []).append(v)
 
 # By default, if the job has a reduce function, we want to print both the key and the value.
 # If no reduction is happening, users usually don't care about the key.
@@ -51,6 +64,8 @@ def map_reduce(module, fd):
         mapfunc('fake_key_%s' % total, line, context)
         total += len(line)
 
+    context.finish()
+
     if reducefunc:
         reduced_context = LocalContext()
         for key, values in context.result.iteritems():
@@ -67,7 +82,7 @@ def map_reduce(module, fd):
     outputfunc(iter(context))
     
 if __name__ == '__main__':
-    import imp, sys
+    import imp, sys, os
 
     if len(sys.argv) != 3:
         print >>sys.stderr, "Usage: FileDriver.py <jobscript.py> <input.data or ->"
@@ -81,6 +96,8 @@ if __name__ == '__main__':
         fd = open(filepath)
 
     modulefd = open(modulepath)
+
+    sys.path.insert(0, os.path.dirname(modulepath))
 
     module = imp.load_module('pydoop_main', modulefd, modulepath, ('.py', 'U', 1))
     map_reduce(module, fd)
