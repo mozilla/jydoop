@@ -39,8 +39,10 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.python.core.Py;
 import org.python.core.PyObject;
 import org.python.core.PyIterator;
+import org.python.core.util.StringUtil;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -95,59 +97,57 @@ public class HBaseDriver extends Configured implements Tool {
 
   public static class MyMapper extends TableMapper<TypeWritable, TypeWritable>  {
     private PyObject mapfunc;
+    private PyObject contextobj;
 
     public void setup(Context context) throws IOException, InterruptedException
     {
       super.setup(context);
       mapfunc = getPythonWrapper(context.getConfiguration()).getFunction("map");
+      contextobj = Py.java2py(new ContextWrapper(context));
     }
 
     public void map(ImmutableBytesWritable key, Result value, Context context) throws IOException, InterruptedException {
+      // TODO: don't hardcode data:json here...
       byte[] value_bytes =  value.getValue("data".getBytes(), "json".getBytes());
-      Object jparams[] = new Object[] {
-          key.toString(),
-          new String(value_bytes),
-          new ContextWrapper(context)
-      };
-      mapfunc._jcall(jparams);
+      mapfunc.__call__(Py.newString(StringUtil.fromBytes(key.get())),
+                       Py.newString(StringUtil.fromBytes(value_bytes)),
+                       contextobj);
     }
   }
 
   public static class MyCombiner extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable> {
     private PyObject combinefunc;
+    private PyObject contextobj;
 
     public void setup(Context context) throws IOException, InterruptedException
     {
       super.setup(context);
       combinefunc = getPythonWrapper(context.getConfiguration()).getFunction("combine");
+      contextobj = Py.java2py(new ContextWrapper(context));
     }
 
     public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
-      Object jparams[] = new Object[] {
-        key.value,
-        new WritableIterWrapper(values.iterator()),
-        new ContextWrapper(context)
-      };
-      combinefunc._jcall(jparams);
+      combinefunc.__call__(key.value, 
+                           new WritableIterWrapper(values.iterator()),
+                           contextobj);
     }
   }
 
   public static class MyReducer extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable>  {
     private PyObject reducefunc;
+    private PyObject contextobj;
 
     public void setup(Context context) throws IOException, InterruptedException
     {
       super.setup(context);
       reducefunc = getPythonWrapper(context.getConfiguration()).getFunction("reduce");
+      contextobj = Py.java2py(new ContextWrapper(context));
     }
 
     public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
-        Object jparams[] = new Object[] {
-            key.value,
-            new WritableIterWrapper(values.iterator()),
-            new ContextWrapper(context)
-        };
-        reducefunc._jcall(jparams);
+      reducefunc.__call__(key.value,
+                          new WritableIterWrapper(values.iterator()),
+                          contextobj);
     }
   }
 
