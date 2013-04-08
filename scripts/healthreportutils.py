@@ -13,7 +13,7 @@ def setupjob(job, args):
     scan = Scan()
     scan.setCaching(500)
     scan.setCacheBlocks(False)
-    scan.addColumn('data'.getBytes(), 'json'.getBytes())
+    scan.addColumn(bytearray('data'), bytearray('json'))
 
     # FIXME: do it without this multi-scan util
     scans = [scan]
