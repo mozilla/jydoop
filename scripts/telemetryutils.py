@@ -33,3 +33,6 @@ def setupjob(job, args):
         'telemetry',
         scans,
         None, None, None, job)
+
+    # inform HBaseDriver about the columns we expect to receive
+    job.getConfiguration().set("org.mozilla.pydoop.hbasecolumns", "data:json");
