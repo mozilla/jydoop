@@ -99,19 +99,52 @@ public class HBaseDriver extends Configured implements Tool {
     private PyObject mapfunc;
     private PyObject contextobj;
 
+    private static class ColumnID
+    {
+      public byte[] family;
+      public byte[] qualifier;
+
+      public ColumnID(String column)
+      {
+        String[] splits = column.split(":", 2);
+        if (splits.length != 2) {
+          throw new AssertionError("Unexpected family:qualifier in org.mozilla.pydoop.hbasecolumns");
+        }
+        family = splits[0].getBytes();
+        qualifier = splits[1].getBytes();
+      }
+    }
+
+    private ColumnID[] columnlist;
+
     public void setup(Context context) throws IOException, InterruptedException
     {
       super.setup(context);
       mapfunc = getPythonWrapper(context.getConfiguration()).getFunction("map");
       contextobj = Py.java2py(new ContextWrapper(context));
+
+      // should be family:qualifier[,family:qualifier...]
+
+      String[] columns = context.getConfiguration().get("org.mozilla.pydoop.hbasecolumns").split(",");
+
+      columnlist = new ColumnID[columns.length];
+      for (int i = 0; i < columns.length; ++i) {
+        columnlist[i] = new ColumnID(columns[i]);
+      }
     }
 
     public void map(ImmutableBytesWritable key, Result value, Context context) throws IOException, InterruptedException {
-      // TODO: don't hardcode data:json here...
-      byte[] value_bytes =  value.getValue("data".getBytes(), "json".getBytes());
-      mapfunc.__call__(Py.newString(StringUtil.fromBytes(key.get())),
-                       Py.newString(StringUtil.fromBytes(value_bytes)),
-                       contextobj);
+
+      // map(k, column1, [column2, ...], context)
+
+      PyObject[] args = new PyObject[2 + columnlist.length];
+      args[0] = Py.newString(StringUtil.fromBytes(key.get()));
+      args[args.length - 1] = contextobj;
+      for (int i = 0; i < columnlist.length; ++i) {
+        byte[] vbytes = value.getValue(columnlist[i].family, columnlist[i].qualifier);
+        args[i + 1] = Py.newString(StringUtil.fromBytes(vbytes));
+      }
+      mapfunc.__call__(args);
     }
   }
 
