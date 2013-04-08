@@ -136,7 +136,7 @@ public class JacksonWrapper
     assert type == JsonToken.START_ARRAY;
     PyList containerList = (PyList) container;
     if (containerList.size() != 1) {
-      throw Py.TypeError("multiple json root objects");
+      throw Py.TypeError("No or multiple json root objects");
     }
     return containerList.__getitem__(0);
   }
