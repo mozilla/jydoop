@@ -1,9 +1,9 @@
-#pydoop: hadoop map-reduce in Python
+#jydoop: Efficient and Testable hadoop map-reduce in Python
 
 ##Purpose
-Querying hadoop/hbase using custom java classes is complicated and tedious. It's very difficult to test and debug analyses.
+Querying hadoop/hbase using custom java classes is complicated and tedious. It's very difficult to test and debug analyses on small sets of sample data, or without setting up a Hadoop/Hbase cluster.
 
-Writing analyses in Python allows for easier local development + testing without having to set up hadoop or hbase.
+Writing analyses in Python allows for easier local development + testing without having to set up hadoop or hbase. The same analsysis scripts can then be deployed to a cluster configuration.
 
 ##Writing Scripts
 To test scripts, use locally saved sample data and PythonDriver.py:

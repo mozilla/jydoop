@@ -1,6 +1,6 @@
 /* -*- Mode: Java; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-package org.mozilla.pydoop;
+package org.mozilla.jydoop;
 
 import org.python.core.PyObject;
 import org.python.core.PyInteger;

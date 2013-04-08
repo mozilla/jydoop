@@ -1,5 +1,5 @@
 """
-Standard library of useful things for pydoop scripts.
+Standard library of useful things for jydoop scripts.
 """
 
 def sumreducer(k, vlist, cx):

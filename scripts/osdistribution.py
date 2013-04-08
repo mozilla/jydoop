@@ -2,7 +2,7 @@
 
 import json
 import random
-import pydoop
+import jydoop
 import telemetryutils
 
 # The setupjob function is used to set up the hadoop job correctly. In
@@ -31,7 +31,7 @@ def map(k, v, cx):
 #
 # In this case, we combine the records by counting the records.
 
-combine = pydoop.sumreducer
+combine = jydoop.sumreducer
 
 # After all of the map records for a particular key have been
 # collected, reduction can count or combine these records (it could
@@ -40,4 +40,4 @@ combine = pydoop.sumreducer
 # In this case, reduction is the exact same as combining, it just adds
 # the map and/or combine results together.
 
-reduce = pydoop.sumreducer
+reduce = jydoop.sumreducer
