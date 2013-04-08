@@ -142,7 +142,7 @@ public class HBaseDriver extends Configured implements Tool {
       args[args.length - 1] = contextobj;
       for (int i = 0; i < columnlist.length; ++i) {
         byte[] vbytes = value.getValue(columnlist[i].family, columnlist[i].qualifier);
-        args[i + 1] = Py.newString(StringUtil.fromBytes(vbytes));
+        args[i + 1] = vbytes == null ? Py.None : Py.newString(StringUtil.fromBytes(vbytes));
       }
       mapfunc.__call__(args);
     }
