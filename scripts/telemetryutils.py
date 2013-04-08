@@ -1,4 +1,4 @@
-"""Utilities for querying telemetry data using pydoop."""
+"""Utilities for querying telemetry data using jydoop."""
 
 # NOTE: When modifying this file, be careful to use java-specific imports
 # only within setupjob, so that people can test scripts using python!
@@ -35,4 +35,4 @@ def setupjob(job, args):
         None, None, None, job)
 
     # inform HBaseDriver about the columns we expect to receive
-    job.getConfiguration().set("org.mozilla.pydoop.hbasecolumns", "data:json");
+    job.getConfiguration().set("org.mozilla.jydoop.hbasecolumns", "data:json");

@@ -1,6 +1,6 @@
 import crashstatsutils
 import json
-import pydoop
+import jydoop
 
 setupjob = crashstatsutils.dosetupjob([('meta_data', 'json'), ('processed_data', 'json')])
 
@@ -28,5 +28,5 @@ def map(k, meta_data, processed_data, context):
 
     context.write((signature, vendor), 1)
 
-combine = pydoop.sumreducer
-reduce = pydoop.sumreducer
+combine = jydoop.sumreducer
+reduce = jydoop.sumreducer

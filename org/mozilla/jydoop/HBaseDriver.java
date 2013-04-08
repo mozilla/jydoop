@@ -1,5 +1,5 @@
 /* -*- Mode: Java; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-package org.mozilla.pydoop;
+package org.mozilla.jydoop;
 
 import java.io.IOException;
 import java.io.File;
@@ -49,13 +49,13 @@ import org.apache.commons.lang.StringUtils;
 public class HBaseDriver extends Configured implements Tool {
   private static PythonWrapper initPythonWrapper(String pathname, Job job) throws IOException
   {
-    job.getConfiguration().set("org.mozilla.pydoop.scriptname", pathname);
+    job.getConfiguration().set("org.mozilla.jydoop.scriptname", pathname);
     return new PythonWrapper(pathname);
   }
 
   static private PythonWrapper getPythonWrapper(Configuration conf) throws IOException
   {
-    String scriptName = conf.get("org.mozilla.pydoop.scriptname");
+    String scriptName = conf.get("org.mozilla.jydoop.scriptname");
     if (null == scriptName) {
       throw new java.lang.NullPointerException("scriptName");
     }
@@ -108,7 +108,7 @@ public class HBaseDriver extends Configured implements Tool {
       {
         String[] splits = column.split(":", 2);
         if (splits.length != 2) {
-          throw new AssertionError("Unexpected family:qualifier in org.mozilla.pydoop.hbasecolumns");
+          throw new AssertionError("Unexpected family:qualifier in org.mozilla.jydoop.hbasecolumns");
         }
         family = splits[0].getBytes();
         qualifier = splits[1].getBytes();
@@ -125,7 +125,7 @@ public class HBaseDriver extends Configured implements Tool {
 
       // should be family:qualifier[,family:qualifier...]
 
-      String[] columns = context.getConfiguration().get("org.mozilla.pydoop.hbasecolumns").split(",");
+      String[] columns = context.getConfiguration().get("org.mozilla.jydoop.hbasecolumns").split(",");
 
       columnlist = new ColumnID[columns.length];
       for (int i = 0; i < columns.length; ++i) {
@@ -225,7 +225,7 @@ public class HBaseDriver extends Configured implements Tool {
 
     PythonWrapper module = initPythonWrapper(scriptFile, job);
 
-    if (!job.getConfiguration().get("org.mozilla.pydoop.scriptname").equals(scriptFile)) {
+    if (!job.getConfiguration().get("org.mozilla.jydoop.scriptname").equals(scriptFile)) {
       throw new java.lang.NullPointerException("Whoops");
     }
 

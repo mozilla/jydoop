@@ -1,5 +1,5 @@
 """
-Utilities for querying crash-stats data using pydoop.
+Utilities for querying crash-stats data using jydoop.
 """
 
 # NOTE: When modifying this file, be careful to use java-specific imports
@@ -48,7 +48,7 @@ def dosetupjob(columnlist):
             None, None, None, job)
 
         # inform HBaseDriver about the columns we expect to receive
-        job.getConfiguration().set("org.mozilla.pydoop.hbasecolumns",
+        job.getConfiguration().set("org.mozilla.jydoop.hbasecolumns",
                                    ','.join(':'.join(column) for column in columnlist))
 
     return setupjob

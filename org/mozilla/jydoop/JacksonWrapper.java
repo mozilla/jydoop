@@ -1,5 +1,5 @@
 /* -*- Mode: Java; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-package org.mozilla.pydoop;
+package org.mozilla.jydoop;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;

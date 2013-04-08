@@ -4,7 +4,7 @@ import org.python.core
 
 # org.python.core.Options.showJavaExceptions = True
 
-import org.mozilla.pydoop
+import org.mozilla.jydoop
 import unittest
 import java.io
 import java.lang
@@ -26,8 +26,8 @@ class TestTypeWritable(unittest.TestCase):
         and serialization work correctly.
         """
 
-        w1 = org.mozilla.pydoop.TypeWritable(v1)
-        w2 = org.mozilla.pydoop.TypeWritable(v2)
+        w1 = org.mozilla.jydoop.TypeWritable(v1)
+        w2 = org.mozilla.jydoop.TypeWritable(v2)
 
         self.assertEqual(w1.compareTo(w2), expected)
         self.assertEqual(w2.compareTo(w1), -expected)
@@ -44,13 +44,13 @@ class TestTypeWritable(unittest.TestCase):
         bytes1 = stream1.toByteArray()
         bytes2 = stream2.toByteArray()
 
-        comp = org.mozilla.pydoop.TypeWritable.Comparator()
+        comp = org.mozilla.jydoop.TypeWritable.Comparator()
 
         self.assertEqual(comp.compare(bytes1, 0, 0, bytes2, 0, 0), expected)
         self.assertEqual(comp.compare(bytes2, 0, 0, bytes1, 0, 0), -expected)
 
-        ww1 = org.mozilla.pydoop.TypeWritable()
-        ww2 = org.mozilla.pydoop.TypeWritable()
+        ww1 = org.mozilla.jydoop.TypeWritable()
+        ww2 = org.mozilla.jydoop.TypeWritable()
         ww1.readFields(java.io.DataInputStream(java.io.ByteArrayInputStream(bytes1)))
         ww2.readFields(java.io.DataInputStream(java.io.ByteArrayInputStream(bytes2)))
 
