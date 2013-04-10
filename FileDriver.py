@@ -57,12 +57,14 @@ def map_reduce(module, fd):
 
     # We make fake keys by keeping track of the file offset from the incoming
     # file.
-    total = 0;
+    total_bytes = 0;
+    total_lines = 0;
     for line in fd:
+        total_lines += 1;
         if len(line) == 0:
             continue
-        mapfunc('fake_key_%s' % total, line, context)
-        total += len(line)
+        mapfunc('fake_key_%s_%s' % (total_lines, total_bytes), line, context)
+        total_bytes += len(line)
 
     context.finish()
 
