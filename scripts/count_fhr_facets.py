@@ -1,10 +1,10 @@
 import json
-import pydoop
+import jydoop
 import healthreportutils
 
 setupjob = healthreportutils.setupjob
 
-combine = pydoop.sumreducer
+combine = jydoop.sumreducer
 
 def map(key, value, context):
     try:
@@ -28,4 +28,4 @@ def map(key, value, context):
         outkey = "\t".join(output)
         context.write(outkey, 1)
 
-reduce = pydoop.sumreducer
+reduce = jydoop.sumreducer

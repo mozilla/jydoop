@@ -22,4 +22,4 @@ def setupjob(job, args):
         None, None, None, job)
 
     # inform HBaseDriver about the columns we expect to receive
-    job.getConfiguration().set("org.mozilla.pydoop.hbasecolumns", "data:json");
+    job.getConfiguration().set("org.mozilla.jydoop.hbasecolumns", "data:json");
