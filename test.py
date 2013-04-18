@@ -79,5 +79,12 @@ class TestTypeWritable(unittest.TestCase):
         self.checkTypeWrapper((1,), (), 1)
         self.checkTypeWrapper(("foo",), ("foo",), 0)
 
+class TestResource(unittest.TestCase):
+    def test_basic(self):
+        import sys
+        sys.path.append('scripts')
+        import jydoop
+        self.assertIsNotNone(jydoop.getResource("scripts/jydoop.py"))
+
 if __name__ == '__main__':
     unittest.main()

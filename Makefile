@@ -12,10 +12,11 @@ JAVA_SOURCE=$(addprefix org/mozilla/jydoop/,PythonWrapper.java TypeWritable.java
 TASK=HBaseDriver
 ARGS=input output
 SCRIPT=$(error Must specify SCRIPT=)
+TEST_PY=test.py
 all: driver.jar
 
 check: driver.jar
-	java -cp driver.jar:$(CP) org.python.util.jython test.py
+	java -cp driver.jar:$(CP) org.python.util.jython $(TEST_PY)
 
 run: driver.jar
 	java -cp driver.jar:$(CP) org.mozilla.jydoop.$(TASK)
