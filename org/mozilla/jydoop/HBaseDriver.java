@@ -98,6 +98,7 @@ public class HBaseDriver extends Configured implements Tool {
   public static class MyMapper extends TableMapper<TypeWritable, TypeWritable>  {
     private PyObject mapfunc;
     private PyObject contextobj;
+    private PythonWrapper pwrapper;
 
     private static class ColumnID
     {
@@ -120,7 +121,8 @@ public class HBaseDriver extends Configured implements Tool {
     public void setup(Context context) throws IOException, InterruptedException
     {
       super.setup(context);
-      mapfunc = getPythonWrapper(context.getConfiguration()).getFunction("map");
+      pwrapper = getPythonWrapper(context.getConfiguration());
+      mapfunc = pwrapper.getFunction("map");
       contextobj = Py.java2py(new ContextWrapper(context));
 
       // should be family:qualifier[,family:qualifier...]
@@ -130,6 +132,19 @@ public class HBaseDriver extends Configured implements Tool {
       columnlist = new ColumnID[columns.length];
       for (int i = 0; i < columns.length; ++i) {
         columnlist[i] = new ColumnID(columns[i]);
+      }
+
+      PyObject setupfunc = pwrapper.getFunction("mapsetup");
+      if (setupfunc != null) {
+        setupfunc.__call__(contextobj);
+      }
+    }
+
+    public void cleanup(Context context)
+    {
+      PyObject cleanupfunc = pwrapper.getFunction("mapcleanup");
+      if (cleanupfunc != null) {
+        cleanupfunc.__call__(contextobj);
       }
     }
 
