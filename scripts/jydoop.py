@@ -2,12 +2,9 @@
 Standard library of useful things for jydoop scripts.
 """
 
-def hasjava():
-    try:
-        import org.python.core.Py
-        return True
-    except ImportError:
-        return False
+def isJython():
+    import platform
+    return platform.system() == 'Java'
         
 def sumreducer(k, vlist, cx):
     """
@@ -20,7 +17,7 @@ def sumreducer(k, vlist, cx):
 Read something out of driver.jar
 """
 def getResource(path):
-    if hasjava():
+    if isJython():
         import org.mozilla.jydoop.PythonValue as PythonValue
         import org.python.core.util.FileUtil as FileUtil
         f = FileUtil.wrap(PythonValue().getClass().getClassLoader().getResourceAsStream(path))
