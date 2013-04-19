@@ -78,6 +78,8 @@ class TestTypeWritable(unittest.TestCase):
         self.checkTypeWrapper((), (), 0)
         self.checkTypeWrapper((1,), (), 1)
         self.checkTypeWrapper(("foo",), ("foo",), 0)
+        self.checkTypeWrapper({'hello':1}, {'hello':1}, 0)
+        self.checkTypeWrapper({}, {}, 0)
 
 class TestResource(unittest.TestCase):
     def test_basic(self):

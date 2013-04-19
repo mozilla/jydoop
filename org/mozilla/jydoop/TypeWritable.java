@@ -9,6 +9,7 @@ import org.python.core.PyFloat;
 import org.python.core.PyString;
 import org.python.core.PyTuple;
 import org.python.core.Py;
+import org.python.core.PyDictionary;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -19,6 +20,8 @@ import java.lang.AssertionError;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
+
+import java.util.Map;
 
 /**
  * This class is a Hadoop Writable which is capable of reflecting a defined subset of Python
@@ -40,6 +43,7 @@ public class TypeWritable implements WritableComparable
   static final byte TYPE_FLOAT = 2;
   static final byte TYPE_STRING = 3;
   static final byte TYPE_TUPLE = 4;
+  static final byte TYPE_DICT = 5;
 
   public PyObject value;
 
@@ -61,7 +65,15 @@ public class TypeWritable implements WritableComparable
       return;
     }
 
-    throw Py.TypeError("Expected int/float/str/tuple");
+    if (obj instanceof PyDictionary) {
+      for (Map.Entry<PyObject, PyObject> entry : ((PyDictionary)obj).getMap().entrySet()) {
+        CheckType(entry.getKey());
+        CheckType(entry.getValue());
+      }
+      return;
+    }
+
+    throw Py.TypeError("Expected int/float/str/tuple, got "+obj.getClass().toString());
   }
 
   public TypeWritable()
@@ -90,6 +102,9 @@ public class TypeWritable implements WritableComparable
     }
     if (obj instanceof PyTuple) {
       return TYPE_TUPLE;
+    }
+    if (obj instanceof PyDictionary) {
+      return TYPE_DICT;
     }
     throw new AssertionError("Unexpected type");
   }
@@ -123,6 +138,15 @@ public class TypeWritable implements WritableComparable
       for (int i = 0; i < obj.__len__(); ++i) {
         WriteType(out, obj.__getitem__(i));
       }
+      return;
+    case TYPE_DICT:
+      PyDictionary dict = (PyDictionary) obj;
+      WritableUtils.writeVInt(out, dict.size());
+      for (Map.Entry<PyObject, PyObject> entry : dict.getMap().entrySet()) {
+        WriteType(out, entry.getKey());
+        WriteType(out, entry.getValue());
+      }      
+      return;
     }
   }
 
@@ -166,6 +190,15 @@ public class TypeWritable implements WritableComparable
         objs[i] = ReadObject(in);
       }
       return new PyTuple(objs);
+    case TYPE_DICT:
+      int len = WritableUtils.readVInt(in);
+      PyDictionary dict = new PyDictionary();
+      for (int i = 0; i < len; ++i) {
+        PyObject key = ReadObject(in);
+        PyObject val = ReadObject(in);
+        dict.getMap().put(key, val);
+      }
+      return dict;
     }
     throw new AssertionError("Unexpected type value");
   }
@@ -221,6 +254,12 @@ public class TypeWritable implements WritableComparable
       if (i < v2.__len__()) {
         return -1;
       }
+      return 0;
+    case TYPE_DICT:
+      String s1=v1.toString(); 
+      String s2=v2.toString();
+      int ret = s1.compareTo(s2);
+      return ret;
     }
     return 0;
   }
