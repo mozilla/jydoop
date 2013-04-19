@@ -8,7 +8,7 @@ export HADOOP_USER_CLASSPATH_FIRST="true"
 export HADOOP_CLASSPATH=jython-standalone-2.7-b1.jar:akela-0.5-SNAPSHOT.jar:jackson-core-2.1.4.jar
 CP=$(HADOOP_CLASSPATH):$(HBASE_CP)
 comma:=,
-JAVA_SOURCE=$(addprefix org/mozilla/jydoop/,PythonWrapper.java TypeWritable.java HBaseDriver.java JacksonWrapper.java)
+JAVA_SOURCE=$(addprefix org/mozilla/jydoop/,PythonWrapper.java PythonValue.java PythonKey.java HBaseDriver.java JacksonWrapper.java)
 TASK=HBaseDriver
 ARGS=input output
 SCRIPT=$(error Must specify SCRIPT=)

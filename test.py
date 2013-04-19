@@ -4,13 +4,13 @@ import org.python.core
 
 # org.python.core.Options.showJavaExceptions = True
 
-import org.mozilla.jydoop
+from org.mozilla.jydoop import PythonValue, PythonKey
 import unittest
 import java.io
 import java.lang
 import sys
 
-class TestTypeWritable(unittest.TestCase):
+class TestPythonKey(unittest.TestCase):
     def assertDeepEquals(self, v1, v2):
         """
         Since we should only be running this on primitive types, repr will do a great
@@ -22,12 +22,12 @@ class TestTypeWritable(unittest.TestCase):
 
     def checkTypeWrapper(self, v1, v2, expected):
         """
-        Given two values, do a set of tests on TypeWritable to make sure that comparisons
+        Given two values, do a set of tests on PythonKey to make sure that comparisons
         and serialization work correctly.
         """
 
-        w1 = org.mozilla.jydoop.TypeWritable(v1)
-        w2 = org.mozilla.jydoop.TypeWritable(v2)
+        w1 = PythonKey(v1)
+        w2 = PythonKey(v2)
 
         self.assertEqual(w1.compareTo(w2), expected)
         self.assertEqual(w2.compareTo(w1), -expected)
@@ -44,20 +44,39 @@ class TestTypeWritable(unittest.TestCase):
         bytes1 = stream1.toByteArray()
         bytes2 = stream2.toByteArray()
 
-        comp = org.mozilla.jydoop.TypeWritable.Comparator()
+        comp = PythonKey.Comparator()
 
         ret = comp.compare(bytes1, 0, 0, bytes2, 0, 0)
-        print [ret, expected]
         self.assertEqual(ret, expected)
         self.assertEqual(comp.compare(bytes2, 0, 0, bytes1, 0, 0), -expected)
 
-        ww1 = org.mozilla.jydoop.TypeWritable()
-        ww2 = org.mozilla.jydoop.TypeWritable()
+        ww1 = PythonKey()
+        ww2 = PythonKey()
         ww1.readFields(java.io.DataInputStream(java.io.ByteArrayInputStream(bytes1)))
         ww2.readFields(java.io.DataInputStream(java.io.ByteArrayInputStream(bytes2)))
 
         self.assertDeepEquals(v1, ww1.value)
         self.assertDeepEquals(v2, ww2.value)
+
+    def checkValueWrapper(self, v):
+        """
+        Given a value, check that it round-trips through PythonValue.
+        """
+
+        w = PythonValue(v)
+
+        stream = java.io.ByteArrayOutputStream()
+        do = java.io.DataOutputStream(stream)
+        w.write(do)
+        b = stream.toByteArray()
+
+        ww = PythonValue()
+        ww.readFields(java.io.DataInputStream(java.io.ByteArrayInputStream(b)))
+
+        self.assertDeepEquals(v, ww.value)
+
+    def checkRejects(self, t, v):
+        self.assertRaises(TypeError, t, (v,))
 
     def test_basic(self):
         self.checkTypeWrapper(None, None, 0)
@@ -80,12 +99,21 @@ class TestTypeWritable(unittest.TestCase):
         self.checkTypeWrapper((), (), 0)
         self.checkTypeWrapper((1,), (), 1)
         self.checkTypeWrapper(("foo",), ("foo",), 0)
-        self.checkTypeWrapper({'hello':1}, {'hello':1}, 0)
-        self.checkTypeWrapper({}, {}, 0)
-        self.checkTypeWrapper([], [], 0)
-        self.checkTypeWrapper([1,], [], 1)
-        self.checkTypeWrapper(["foo",], ["foo",], 0)
 
+    def test_values(self):
+        self.checkValueWrapper({})
+        self.checkValueWrapper([])
+        self.checkValueWrapper([1,])
+        self.checkValueWrapper(["foo",])
+        self.checkValueWrapper({'hello':1})
+
+    def test_rejects(self):
+        self.checkRejects(PythonValue, sys.stdin)
+        self.checkRejects(PythonKey, {})
+        self.checkRejects(PythonKey, [])
+        self.checkRejects(PythonValue, [sys.stdin])
+        self.checkRejects(PythonValue, {'foo': sys.stdin})
+        self.checkRejects(PythonKey, ('a', []))
 
 class TestResource(unittest.TestCase):
     def test_basic(self):
