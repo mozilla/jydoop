@@ -64,9 +64,9 @@ public class HBaseDriver extends Configured implements Tool {
 
   public static class WritableIterWrapper extends PyIterator
   {
-    private Iterator<TypeWritable> iter;
+    private Iterator<PythonValue> iter;
     
-    public WritableIterWrapper(Iterator<TypeWritable> i)
+    public WritableIterWrapper(Iterator<PythonValue> i)
     {
       iter = i;
     }
@@ -91,11 +91,11 @@ public class HBaseDriver extends Configured implements Tool {
     @SuppressWarnings("unchecked")
     public void write(PyObject key, PyObject val) throws IOException, InterruptedException
     {
-      cx.write(new TypeWritable(key), new TypeWritable(val));
+      cx.write(new PythonKey(key), new PythonValue(val));
     }
   }
 
-  public static class MyMapper extends TableMapper<TypeWritable, TypeWritable>  {
+  public static class MyMapper extends TableMapper<PythonKey, PythonValue>  {
     private PyObject mapfunc;
     private PyObject contextobj;
     private PythonWrapper pwrapper;
@@ -163,7 +163,7 @@ public class HBaseDriver extends Configured implements Tool {
     }
   }
 
-  public static class MyCombiner extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable> {
+  public static class MyCombiner extends Reducer<PythonKey, PythonValue, PythonKey, PythonValue> {
     private PyObject combinefunc;
     private PyObject contextobj;
 
@@ -174,14 +174,14 @@ public class HBaseDriver extends Configured implements Tool {
       contextobj = Py.java2py(new ContextWrapper(context));
     }
 
-    public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
+    public void reduce(PythonKey key, Iterable<PythonValue> values, Context context) throws IOException, InterruptedException {
       combinefunc.__call__(key.value, 
                            new WritableIterWrapper(values.iterator()),
                            contextobj);
     }
   }
 
-  public static class MyReducer extends Reducer<TypeWritable, TypeWritable, TypeWritable, TypeWritable>  {
+  public static class MyReducer extends Reducer<PythonKey, PythonValue, PythonKey, PythonValue>  {
     private PyObject reducefunc;
     private PyObject contextobj;
 
@@ -192,7 +192,7 @@ public class HBaseDriver extends Configured implements Tool {
       contextobj = Py.java2py(new ContextWrapper(context));
     }
 
-    public void reduce(TypeWritable key, Iterable<TypeWritable> values, Context context) throws IOException, InterruptedException {
+    public void reduce(PythonKey key, Iterable<PythonValue> values, Context context) throws IOException, InterruptedException {
       reducefunc.__call__(key.value,
                           new WritableIterWrapper(values.iterator()),
                           contextobj);
@@ -228,15 +228,15 @@ public class HBaseDriver extends Configured implements Tool {
     }
     FileOutputFormat.setOutputPath(job, outdir);  // adjust directories as required
 
-    job.setMapOutputKeyClass(TypeWritable.class);
-    job.setMapOutputValueClass(TypeWritable.class);
+    job.setMapOutputKeyClass(PythonKey.class);
+    job.setMapOutputValueClass(PythonValue.class);
     job.setMapperClass(MyMapper.class);
 
     job.setReducerClass(MyReducer.class);    // reducer class
     job.setOutputFormatClass(SequenceFileOutputFormat.class);
-    job.setOutputKeyClass(TypeWritable.class);
-    job.setOutputValueClass(TypeWritable.class);
-    job.setSortComparatorClass(TypeWritable.Comparator.class);
+    job.setOutputKeyClass(PythonKey.class);
+    job.setOutputValueClass(PythonValue.class);
+    job.setSortComparatorClass(PythonKey.Comparator.class);
 
     PythonWrapper module = initPythonWrapper(scriptFile, job);
 
@@ -269,8 +269,8 @@ public class HBaseDriver extends Configured implements Tool {
       }
       SequenceFile.Reader r = new SequenceFile.Reader(fs, file.getPath(), conf);
 
-      TypeWritable k = new TypeWritable();
-      TypeWritable v = new TypeWritable();
+      PythonKey k = new PythonKey();
+      PythonValue v = new PythonValue();
       while (r.next(k, v)) {
         // If this is a map-only job, the keys are usually not valuable so we default
         // to printing only the value.
