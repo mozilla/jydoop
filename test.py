@@ -46,7 +46,9 @@ class TestTypeWritable(unittest.TestCase):
 
         comp = org.mozilla.jydoop.TypeWritable.Comparator()
 
-        self.assertEqual(comp.compare(bytes1, 0, 0, bytes2, 0, 0), expected)
+        ret = comp.compare(bytes1, 0, 0, bytes2, 0, 0)
+        print [ret, expected]
+        self.assertEqual(ret, expected)
         self.assertEqual(comp.compare(bytes2, 0, 0, bytes1, 0, 0), -expected)
 
         ww1 = org.mozilla.jydoop.TypeWritable()
@@ -80,6 +82,10 @@ class TestTypeWritable(unittest.TestCase):
         self.checkTypeWrapper(("foo",), ("foo",), 0)
         self.checkTypeWrapper({'hello':1}, {'hello':1}, 0)
         self.checkTypeWrapper({}, {}, 0)
+        self.checkTypeWrapper([], [], 0)
+        self.checkTypeWrapper([1,], [], 1)
+        self.checkTypeWrapper(["foo",], ["foo",], 0)
+
 
 class TestResource(unittest.TestCase):
     def test_basic(self):
