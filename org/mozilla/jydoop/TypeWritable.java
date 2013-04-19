@@ -9,6 +9,9 @@ import org.python.core.PyFloat;
 import org.python.core.PyString;
 import org.python.core.PyTuple;
 import org.python.core.Py;
+import org.python.core.PyDictionary;
+import org.python.core.PyList;
+import org.python.core.PySequenceList;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -19,6 +22,8 @@ import java.lang.AssertionError;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
+
+import java.util.Map;
 
 /**
  * This class is a Hadoop Writable which is capable of reflecting a defined subset of Python
@@ -40,7 +45,9 @@ public class TypeWritable implements WritableComparable
   static final byte TYPE_FLOAT = 2;
   static final byte TYPE_STRING = 3;
   static final byte TYPE_TUPLE = 4;
-
+  static final byte TYPE_DICT = 5;
+  static final byte TYPE_LIST = 6;
+  
   public PyObject value;
 
   private static void CheckType(PyObject obj)
@@ -54,14 +61,23 @@ public class TypeWritable implements WritableComparable
         obj instanceof PyString) {
       return;
     }
-    if (obj instanceof PyTuple) {
-      for (PyObject inner : ((PyTuple)obj).getArray()) {
+
+    if (obj instanceof PyList || obj instanceof PyTuple) {
+      for (PyObject inner : ((PySequenceList)obj).getArray()) {
         CheckType(inner);
       }
       return;
     }
 
-    throw Py.TypeError("Expected int/float/str/tuple");
+    if (obj instanceof PyDictionary) {
+      for (Map.Entry<PyObject, PyObject> entry : ((PyDictionary)obj).getMap().entrySet()) {
+        CheckType(entry.getKey());
+        CheckType(entry.getValue());
+      }
+      return;
+    }
+
+    throw Py.TypeError("Expected int/float/str/tuple, got "+obj.getClass().toString());
   }
 
   public TypeWritable()
@@ -91,6 +107,12 @@ public class TypeWritable implements WritableComparable
     if (obj instanceof PyTuple) {
       return TYPE_TUPLE;
     }
+    if (obj instanceof PyList) {
+      return TYPE_LIST;
+    }
+    if (obj instanceof PyDictionary) {
+      return TYPE_DICT;
+    }
     throw new AssertionError("Unexpected type");
   }
 
@@ -117,12 +139,23 @@ public class TypeWritable implements WritableComparable
       WritableUtils.writeVInt(out, b.length);
       out.write(b);
       return;
-
     case TYPE_TUPLE:
-      WritableUtils.writeVInt(out, obj.__len__());
-      for (int i = 0; i < obj.__len__(); ++i) {
-        WriteType(out, obj.__getitem__(i));
+    case TYPE_LIST:
+      PyObject[] array = ((PySequenceList)obj).getArray();
+      WritableUtils.writeVInt(out, array.length);
+
+      for (int i = 0; i < array.length; ++i) {
+        WriteType(out, array[i]);
       }
+      return;
+    case TYPE_DICT:
+      PyDictionary dict = (PyDictionary) obj;
+      WritableUtils.writeVInt(out, dict.size());
+      for (Map.Entry<PyObject, PyObject> entry : dict.getMap().entrySet()) {
+        WriteType(out, entry.getKey());
+        WriteType(out, entry.getValue());
+      }      
+      return;
     }
   }
 
@@ -160,12 +193,24 @@ public class TypeWritable implements WritableComparable
       in.readFully(bytes);
       return new PyString(new String(bytes, "UTF-8"));
     case TYPE_TUPLE:
+    case TYPE_LIST:
       int l = WritableUtils.readVInt(in);
       PyObject[] objs = new PyObject[l];
       for (int i = 0; i < l; ++i) {
         objs[i] = ReadObject(in);
       }
-      return new PyTuple(objs);
+      if (type == TYPE_TUPLE)
+        return new PyTuple(objs, false);
+      return new PyList(objs);
+    case TYPE_DICT:
+      int len = WritableUtils.readVInt(in);
+      PyDictionary dict = new PyDictionary();
+      for (int i = 0; i < len; ++i) {
+        PyObject key = ReadObject(in);
+        PyObject val = ReadObject(in);
+        dict.getMap().put(key, val);
+      }
+      return dict;
     }
     throw new AssertionError("Unexpected type value");
   }
@@ -208,6 +253,7 @@ public class TypeWritable implements WritableComparable
       return v > 0 ? 1 : v < 0 ? -1 : 0;
 
     case TYPE_TUPLE:
+    case TYPE_LIST:
       int i = 0;
       for (; i < v1.__len__(); ++i) {
         if (i == v2.__len__()) {
@@ -221,6 +267,12 @@ public class TypeWritable implements WritableComparable
       if (i < v2.__len__()) {
         return -1;
       }
+      return 0;
+    case TYPE_DICT:
+      String s1=v1.toString(); 
+      String s2=v2.toString();
+      int ret = s1.compareTo(s2);
+      return ret;
     }
     return 0;
   }
@@ -353,6 +405,7 @@ public class TypeWritable implements WritableComparable
         return r > 0 ? 1 : r < 0 ? -1 : 0;
 
       case TYPE_TUPLE:
+      case TYPE_LIST:
         int l1 = v1.readVInt();
         int l2 = v2.readVInt();
         int i = 0;
@@ -368,8 +421,12 @@ public class TypeWritable implements WritableComparable
         if (i < l2) {
           return -1;
         }
+        return 0;
+      case TYPE_DICT:
+        // not sure what this method does
+        return 0;
       }
-      return 0;
+      throw new AssertionError("unhandled byte comparison");
     }
   }
 }
