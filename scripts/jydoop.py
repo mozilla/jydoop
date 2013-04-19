@@ -2,6 +2,13 @@
 Standard library of useful things for jydoop scripts.
 """
 
+def hasjava():
+    try:
+        import org.python.core.Py
+        return True
+    except ImportError:
+        return False
+        
 def sumreducer(k, vlist, cx):
     """
     Simple function which can be used as a combiner and reducer to compute
@@ -13,12 +20,11 @@ def sumreducer(k, vlist, cx):
 Read something out of driver.jar
 """
 def getResource(path):
-    try:
-        # Jython case
-        import org.mozilla.jydoop.TypeWritable as TypeWritable
+    if hasjava():
+        import org.mozilla.jydoop.PythonValue as PythonValue
         import org.python.core.util.FileUtil as FileUtil
-        f = FileUtil.wrap(TypeWritable().getClass().getClassLoader().getResourceAsStream(path))
-    except ImportError:
+        f = FileUtil.wrap(PythonValue().getClass().getClassLoader().getResourceAsStream(path))
+    else:
         # Python case
         f = open(path, 'r')
     return f.read()
