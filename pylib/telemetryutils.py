@@ -16,7 +16,7 @@ def setupjob(job, args):
     import java.util.Calendar as Calendar
     import com.mozilla.hadoop.hbase.mapreduce.MultiScanTableMapReduceUtil as MSTMRU
     import com.mozilla.util.Pair
-    
+
     if len(args) != 2:
         raise Exception("Usage: <startdate-YYYYMMDD> <enddate-YYYYMMDD>")
 

@@ -5,7 +5,7 @@ Standard library of useful things for jydoop scripts.
 def isJython():
     import platform
     return platform.system() == 'Java'
-        
+
 def sumreducer(k, vlist, cx):
     """
     Simple function which can be used as a combiner and reducer to compute
