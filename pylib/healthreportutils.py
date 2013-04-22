@@ -3,7 +3,7 @@
 def setupjob(job, args):
     """
     Set up a job to run full table scans for FHR data.
-    
+
     We don't expect any arguments.
     """
 

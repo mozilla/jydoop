@@ -42,31 +42,38 @@ public class PythonWrapper {
     }
   }
 
+  private File syspathEntry(String path) throws IOException {
+    URL url = this.getClass().getResource(path);
+
+    File f;
+
+    try {
+      if (url.getProtocol().equals("file")) {
+        f = new File(url.toURI());
+      } else if (url.getProtocol().equals("jar")) {
+        JarURLConnection j = (JarURLConnection) url.openConnection();
+        File jf = new File(j.getJarFileURL().toURI());
+        f = new File(jf, j.getEntryName());
+      } else {
+        throw new java.lang.UnsupportedOperationException("Cannot get file path for URL: " +
+          url);
+      }
+    } catch (java.net.URISyntaxException e) {
+      throw new IOException(e);
+    }
+
+    return f;
+  }
+
   PythonWrapper(String pathname) throws IOException {
     interp = new PythonInterpreter();
 
+    // Add the shared modules directory to sys.path.
+    File syspathentry = this.syspathEntry("/pylib/");
+    interp.getSystemState().path.insert(0, Py.newString(syspathentry.getPath()));
+
     // Add the location of the script to sys.path so that relative imports work
-    
-    URL scripturl = this.getClass().getResource("/" + pathname);
-    File syspathentry;
-
-    try {
-      if (scripturl.getProtocol().equals("file")) {
-        syspathentry = new File(scripturl.toURI());
-      }
-      else if (scripturl.getProtocol().equals("jar")) {
-        JarURLConnection jaruri = (JarURLConnection) scripturl.openConnection();
-
-        File jarfile = new File(jaruri.getJarFileURL().toURI());
-        syspathentry = new File(jarfile, jaruri.getEntryName());
-      }
-      else {
-        throw new java.lang.UnsupportedOperationException("Cannot get file path for URL: " + scripturl);
-      }
-    }
-    catch (java.net.URISyntaxException e) {
-      throw new IOException(e);
-    }
+    syspathentry = this.syspathEntry("/" + pathname);
 
     interp.getSystemState().path.insert(0, Py.newString(syspathentry.getParent()));
 
@@ -76,6 +83,7 @@ public class PythonWrapper {
     interp.getSystemState().path_hooks.insert(0, new JSONImporter());
 
     // Get the the script path from our loader
+    URL scripturl = this.getClass().getResource("/" + pathname);
     InputStream pythonstream = scripturl.openStream();
     interp.execfile(pythonstream, pathname);
   }

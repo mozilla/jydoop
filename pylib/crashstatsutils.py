@@ -12,7 +12,7 @@ def dosetupjob(columnlist):
     Returns a setupjob function which retrieves the specified columns.
     Expects columns to be [('family', 'qualifier')...]
     """
-    
+
     def setupjob(job, args):
         """
         Set up a job to run on crash-stats date ranges.
