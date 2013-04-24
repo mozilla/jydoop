@@ -97,6 +97,7 @@ if __name__ == '__main__':
 
     modulefd = open(modulepath)
 
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pylib'))
     sys.path.insert(0, os.path.dirname(modulepath))
 
     module = imp.load_module('pydoop_main', modulefd, modulepath, ('.py', 'U', 1))
