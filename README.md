@@ -27,3 +27,34 @@ For example, to count the distribution of operating systems on Mozilla telemetry
 ````
 make ARGS="scripts/osdistribution.py outputfile 20130330 20133030" hadoop
 ````
+
+## Firefox Health Report Jobs
+
+To help reduce the boilerplate required to write Firefox Health Report
+jobs, a special decorator and Python class is made available. From your job
+script:
+
+
+    from healthreportutils import (
+        FHRMapper,
+        setupjob,
+    )
+
+
+    @FHRMapper(only_major_channels=True)
+    def map(key, payload, context):
+        if payload.telemetry_enabled:
+            return
+
+        for day, providers in payload.daily_data():
+            pass
+
+
+When the @FHRMapper decorator is applied to a *map* function, the 2nd
+argument to the function will automatically be converted to a
+*healthreportutils.FHRPayload* class. In addition, special arguments can
+be passed to the decorator to perform common filtering operations
+outside of your job.
+
+See the source in healthreportutils.py for complete usage info.
+
