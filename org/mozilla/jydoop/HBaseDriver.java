@@ -42,6 +42,7 @@ import org.apache.hadoop.conf.Configured;
 import org.python.core.Py;
 import org.python.core.PyObject;
 import org.python.core.PyIterator;
+import org.python.core.PyTuple;
 import org.python.core.util.StringUtil;
 
 import org.apache.commons.lang.StringUtils;
@@ -212,10 +213,10 @@ public class HBaseDriver extends Configured implements Tool {
     String outPath = args[1];
 
     Path outdir = new Path(outPath);
-    Configuration conf = getConf();
+    final Configuration conf = getConf();
     conf.set("mapred.compress.map.output", "true");
     conf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.SnappyCodec");
-    FileSystem fs = FileSystem.get(conf);
+    final FileSystem fs = FileSystem.get(conf);
 
     String jobname = "HBaseDriver: " + StringUtils.join(args, " ");
 
@@ -223,7 +224,6 @@ public class HBaseDriver extends Configured implements Tool {
     job.setJarByClass(HBaseDriver.class);     // class that contains mapper
     try {
       fs.delete(outdir, true);
-      System.err.println("Deleted old " + outPath);
     } catch(Exception e) {
     }
     FileOutputFormat.setOutputPath(job, outdir);  // adjust directories as required
@@ -258,32 +258,56 @@ public class HBaseDriver extends Configured implements Tool {
       return 1;
     }
 
-    // Now read the hadoop files and output a single local file from the results
-    FileOutputStream outfs = new FileOutputStream(outPath);
-    PrintStream outps = new PrintStream(outfs);
+    // Now read the hadoop files and call the output function
 
-    FileStatus[] files = fs.listStatus(outdir);
-    for (FileStatus file : files) {
-      if (file.getLen() == 0) {
-        continue;
+    final FileStatus[] files = fs.listStatus(outdir);
+
+    class KeyValueIterator extends PyIterator
+    {
+      int index;
+      SequenceFile.Reader r;
+
+      public KeyValueIterator() {
+        index = 0;
       }
-      SequenceFile.Reader r = new SequenceFile.Reader(fs, file.getPath(), conf);
 
-      PythonKey k = new PythonKey();
-      PythonValue v = new PythonValue();
-      while (r.next(k, v)) {
-        // If this is a map-only job, the keys are usually not valuable so we default
-        // to printing only the value.
-        // TODO: tab-delimit tuples instead of just .toString on them
-        if (!maponly) {
-          outps.print(k.toString());
-          outps.print('\t');
+      public PyObject __iternext__()
+      {
+        PythonKey k = new PythonKey();
+        PythonValue v = new PythonValue();
+        try {
+          for ( ; index < files.length; r = null, ++index) {
+            if (r == null) {
+              if (files[index].getLen() == 0) {
+                continue;
+              }
+              r = new SequenceFile.Reader(fs, files[index].getPath(), conf);
+            }
+            if (r.next(k, v)) {
+              return new PyTuple(k.value, v.value);
+            }
+          }
         }
-        outps.print(v.toString());
-        outps.println();
+        catch (IOException e) {
+          throw Py.IOError(e);
+        }
+        return null;
       }
     }
-    outps.close();
+
+    PyObject outputfunc = module.getFunction("output");
+    if (outputfunc == null) {
+      if (maponly) {
+        outputfunc = org.python.core.imp.load("jydoop").__getattr__("outputWithoutKey");
+      } else {
+        outputfunc = org.python.core.imp.load("jydoop").__getattr__("outputWithKey");
+      }
+    }
+    outputfunc.__call__(Py.newString(outPath), new KeyValueIterator());
+
+    // If we got here, the temporary files are irrelevant. Delete them.
+    fs.delete(outdir, true);
+
     return 0;
   }
 
