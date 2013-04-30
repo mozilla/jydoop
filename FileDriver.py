@@ -29,8 +29,6 @@ class LocalContext:
             for v in vlist:
                 self.result.setdefault(k, []).append(v)
 
-# By default, if the job has a reduce function, we want to print both the key and the value.
-# If no reduction is happening, users usually don't care about the key.
 def outputwithkey(rlist):
     for k, v in rlist:
         print "%s\t%s" % (k, v)
@@ -39,7 +37,7 @@ def outputnokey(rlist):
     for k, v in rlist:
         print v
 
-def map_reduce(module, fd):
+def map_reduce(module, fd, outputpath):
     setupfunc = getattr(module, 'setupjob', None)
     mapfunc = getattr(module, 'map', None)
     reducefunc = getattr(module, 'reduce', None)
@@ -72,23 +70,28 @@ def map_reduce(module, fd):
             module.reduce(key, values, reduced_context)
         context = reduced_context
 
+    # By default, if the job has a reduce function, we want to print both
+    # the key and the value.
+    # If no reduction is happening, users usually don't care about the key.
     if hasattr(module, 'output'):
         outputfunc = module.output
     elif reducefunc:
-        outputfunc = outputwithkey
+        import jydoop
+        outputfunc = jydoop.outputWithKey
     else:
-        outputfunc = outputnokey
+        import jydoop
+        outputfunc = jydoop.outputWithoutKey
 
-    outputfunc(iter(context))
+    outputfunc(outputpath, iter(context))
     
 if __name__ == '__main__':
     import imp, sys, os
 
-    if len(sys.argv) != 3:
-        print >>sys.stderr, "Usage: FileDriver.py <jobscript.py> <input.data or ->"
+    if len(sys.argv) != 4:
+        print >>sys.stderr, "Usage: FileDriver.py <jobscript.py> <input.data or -> <outputpath>"
         sys.exit(1)
 
-    modulepath, filepath = sys.argv[1:]
+    modulepath, filepath, outputpath = sys.argv[1:]
 
     if filepath == "-":
         fd = sys.stdin
@@ -101,4 +104,4 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.dirname(modulepath))
 
     module = imp.load_module('pydoop_main', modulefd, modulepath, ('.py', 'U', 1))
-    map_reduce(module, fd)
+    map_reduce(module, fd, outputpath)
