@@ -9,6 +9,7 @@ import org.python.core.PyType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.net.URL;
 import java.net.JarURLConnection;
 
@@ -48,7 +49,9 @@ public class PythonWrapper {
     File f;
 
     try {
-      if (url.getProtocol().equals("file")) {
+      if (url == null) {
+        f = new File(path);
+      } else if (url.getProtocol().equals("file")) {
         f = new File(url.toURI());
       } else if (url.getProtocol().equals("jar")) {
         JarURLConnection j = (JarURLConnection) url.openConnection();
@@ -84,9 +87,14 @@ public class PythonWrapper {
 
     // Get the the script path from our loader
     URL scripturl = this.getClass().getResource("/" + pathname);
-    InputStream pythonstream = scripturl.openStream();
+    InputStream pythonstream = scripturl != null ? scripturl.openStream() : new FileInputStream(pathname);
     interp.execfile(pythonstream, pathname);
   }
+
+  public static void main(String args[]) throws IOException {
+    new PythonWrapper(args[0]);
+  }
+
   public PyObject getFunction(String name) {
     return interp.get(name.intern());
   }

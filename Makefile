@@ -16,7 +16,7 @@ TEST_PY=test.py
 all: driver.jar
 
 check: driver.jar
-	java -cp driver.jar:$(CP) org.python.util.jython $(TEST_PY)
+	java -cp driver.jar:$(CP) org.mozilla.jydoop.PythonWrapper $(TEST_PY)
 
 run: driver.jar
 	java -cp driver.jar:$(CP) org.mozilla.jydoop.$(TASK)

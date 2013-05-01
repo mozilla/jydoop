@@ -123,4 +123,5 @@ class TestResource(unittest.TestCase):
         self.assertIsNotNone(jydoop.getResource("scripts/jydoop.py"))
 
 if __name__ == '__main__':
-    unittest.main()
+    """For some reason sys.exit(0) causes Jython to get angry when run from PythonWrapper"""
+    unittest.main(exit=False)
