@@ -120,7 +120,7 @@ class TestResource(unittest.TestCase):
         import sys
         sys.path.append('scripts')
         import jydoop
-        self.assertIsNotNone(jydoop.getResource("scripts/jydoop.py"))
+        self.assertIsNotNone(jydoop.getResource("pylib/jydoop.py"))
 
 if __name__ == '__main__':
     """For some reason sys.exit(0) causes Jython to get angry when run from PythonWrapper"""
