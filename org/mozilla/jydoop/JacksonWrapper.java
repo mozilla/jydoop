@@ -4,17 +4,25 @@ package org.mozilla.jydoop;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 
 import org.python.core.PyObject;
 import org.python.core.PyDictionary;
 import org.python.core.PyList;
 import org.python.core.Py;
+import org.python.core.PyString;
 
 import java.lang.AssertionError;
 
 import java.util.ArrayList;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 
 public class JacksonWrapper
 {
@@ -67,10 +75,7 @@ public class JacksonWrapper
    */
   public static PyObject loads(String s) throws IOException
   {
-    if (factory == null) {
-      factory = new JsonFactory();
-    }
-    JsonParser parser = factory.createJsonParser(s);
+    JsonParser parser = factory().createJsonParser(s);
 
     ArrayList<PyObject> containers = new ArrayList<PyObject>();
     ArrayList<JsonToken> containerTypes = new ArrayList<JsonToken>();
@@ -139,5 +144,25 @@ public class JacksonWrapper
       throw Py.TypeError("No or multiple json root objects");
     }
     return containerList.__getitem__(0);
+  }
+
+  public static JsonFactory factory() {
+    if (factory != null) {
+      return factory;
+    }
+    factory = new JsonFactory();
+    ObjectMapper mapper = new ObjectMapper();
+    SimpleModule module = new SimpleModule("PyDictionary");
+    module.addSerializer(new PySerializer());
+    mapper.registerModule(module);
+    factory.setCodec(mapper);
+    return factory;
+  }
+
+  public static String dumps(PyObject obj) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+     JsonGenerator parser = factory().createJsonGenerator(baos, JsonEncoding.UTF8);
+     parser.writeObject(obj);
+     return new String(baos.toByteArray(), "UTF-8");
   }
 }
