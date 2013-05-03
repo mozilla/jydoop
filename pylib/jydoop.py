@@ -69,4 +69,4 @@ def outputWithoutKey(path, results):
         if len(l) == 1:
             print >>f, v
         else:
-            csv.writerow(l)
+            w.writerow(l)
