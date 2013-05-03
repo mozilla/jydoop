@@ -14,7 +14,10 @@ import org.python.core.PyDictionary;
 import org.python.core.PyObject;
 import org.python.core.PyList;
 import org.python.core.Py;
-import org.python.core.*;
+import org.python.core.PyUnicode;
+import org.python.core.PyInteger;
+import org.python.core.PyLong;
+import org.python.core.PySequenceList;
 
 import java.lang.AssertionError;
 
@@ -23,7 +26,7 @@ import java.util.ArrayList;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.Map;
 
  public class PySerializer extends StdSerializer<PyObject> {
      public PySerializer() {
