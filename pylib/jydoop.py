@@ -70,3 +70,28 @@ def outputWithoutKey(path, results):
             print >>f, v
         else:
             w.writerow(l)
+
+"""
+Run a job that takes jydoop output as input.  In other words, sequence
+files containing PythonKey keys and PythonValue values.
+"""
+def setupjob(job, args):
+    """
+    Set up a job to run on a list of paths.  Jobs expect at least one path,
+    but you may specify as many as you like.
+    """
+
+    import org.apache.hadoop.mapreduce.lib.input.FileInputFormat as FileInputFormat
+    import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat as MyInputFormat
+
+    if len(args) < 1:
+        raise Exception("Usage: path [ path2 ] [ path3 ] [ ... ]")
+
+    job.setInputFormatClass(MyInputFormat)
+    FileInputFormat.setInputPaths(job, ",".join(args));
+
+"""
+Indicate to HadoopDriver which Mapper we want to use.
+"""
+def mappertype():
+    return "JYDOOP"
