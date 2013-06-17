@@ -2,17 +2,8 @@
 package org.mozilla.jydoop;
 
 import java.io.IOException;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
-import java.util.StringTokenizer;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Iterator;
-import org.apache.hadoop.conf.Configuration;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -22,20 +13,13 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.util.GenericOptionsParser;
-import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.conf.Configuration;
@@ -363,6 +347,15 @@ public class HadoopDriver extends Configured implements Tool {
 
     if (!job.waitForCompletion(true)) {
       return 1;
+    }
+
+    // See if we want to skip the export / delete of data from HDFS
+    PyObject skipfunc = module.getFunction("skip_local_output");
+    if (skipfunc != null) {
+       PyObject skipobj = skipfunc.__call__();
+       if (skipobj.asInt() != 0) {
+          return 0;
+       }
     }
 
     // Now read the hadoop files and call the output function
