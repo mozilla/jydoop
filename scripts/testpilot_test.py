@@ -15,7 +15,7 @@ def map(key, value, context):
         else:
            context.write("noperson", 1)
     except:
-        context.write("error", 1)
+        context.write(key, 1)
 
 combine = jydoop.sumreducer
 
