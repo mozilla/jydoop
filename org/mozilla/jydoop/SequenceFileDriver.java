@@ -19,6 +19,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.conf.Configuration;
@@ -81,7 +82,7 @@ public class SequenceFileDriver extends Configured implements Tool {
   }
 
   // TODO: add a "useBinary" which uses BytesWritable for ValueIn
-  public static class MyMapper extends Mapper<Text, Text, PythonKey, PythonValue>  {
+  public static class MyMapper extends Mapper<LongWritable, Text, PythonKey, PythonValue>  {
     private PyObject mapfunc;
     private PyObject contextobj;
     private PythonWrapper pwrapper;
@@ -111,13 +112,14 @@ public class SequenceFileDriver extends Configured implements Tool {
       }
     }
 
-    public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+    public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 
       // map(k, column1, [column2, ...], context)
 
+      String[] valueBits = new String(value.getBytes()).split("\t", 2);
       PyObject[] args = new PyObject[3];
-      args[0] = Py.newString(StringUtil.fromBytes(key.getBytes()));
-      args[1] = Py.newString(StringUtil.fromBytes(value.getBytes()));
+      args[0] = Py.newString(valueBits.length >= 1 ? valueBits[0] : "");
+      args[1] = Py.newString(valueBits.length >= 2 ? valueBits[1] : "");
       args[2] = contextobj;
       mapfunc.__call__(args);
     }

@@ -15,7 +15,7 @@ def setupjob(job, args):
     import java.text.SimpleDateFormat as SimpleDateFormat
     import java.util.Calendar as Calendar
     import org.apache.hadoop.mapred.FileInputFormat as FileInputFormat
-    import org.apache.hadoop.mapred.SequenceFileAsTextInputFormat as SequenceFileAsTextInputFormat
+    #import org.apache.hadoop.mapred.SequenceFileAsTextInputFormat as SequenceFileAsTextInputFormat
 
     if len(args) != 3:
         raise Exception("Usage: <testpilot_study> <startdate-YYYY-MM-DD> <enddate-YYYY-MM-DD>")
@@ -24,7 +24,7 @@ def setupjob(job, args):
     startdate = args[1]
     enddate = args[2]
 
-    job.setInputFormatClass(SequenceFileAsTextInputFormat.class)
+    #job.setInputFormatClass(SequenceFileAsTextInputFormat.class)
 
     # TODO: iterate properly
     paths = [pathformat % (study, startdate), pathformat % (study, enddate)]
@@ -41,4 +41,4 @@ def setupjob(job, args):
     #        }
     #    });
     #    
-    FileInputFormat.setInputPaths(job, ",".join(paths));
+    FileInputFormat.setInputPaths(job.getConfiguration(), ",".join(paths));
