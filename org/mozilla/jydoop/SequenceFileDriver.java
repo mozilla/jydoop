@@ -19,7 +19,6 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.conf.Configuration;
@@ -118,8 +117,8 @@ public class SequenceFileDriver extends Configured implements Tool {
 
       String[] valueBits = new String(value.getBytes()).split("\t", 2);
       PyObject[] args = new PyObject[3];
-      args[0] = Py.newString(valueBits.length >= 1 ? valueBits[0] : "");
-      args[1] = Py.newString(valueBits.length >= 2 ? valueBits[1] : "");
+      args[0] = Py.newString(key.toString());
+      args[1] = Py.newString(value.toString());
       args[2] = contextobj;
       mapfunc.__call__(args);
     }
