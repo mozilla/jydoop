@@ -238,7 +238,6 @@ public class HadoopDriver extends Configured implements Tool {
 
       // map(key, value, context)
 
-      String[] valueBits = new String(value.getBytes()).split("\t", 2);
       PyObject[] args = new PyObject[3];
       args[0] = key.value;
       args[1] = value.value;
@@ -325,19 +324,20 @@ public class HadoopDriver extends Configured implements Tool {
 
     MapperType type = null;
 
-    if (module.getFunction("mappertype") != null) {
-       String typeStr = module.getFunction("mappertype")._jcall(new Object[]{});
-       type = MapperType.valueOf(typeStr);
+    PyObject typefunc = module.getFunction("mappertype");
+    if (typefunc != null) {
+       PyObject typeobj = typefunc.__call__();
+       type = MapperType.valueOf(typeobj.asString());
     }
 
     switch(type) {
-    case MapperType.HBASE:
+    case HBASE:
        job.setMapperClass(HBaseMapper.class);
        break;
-    case MapperType.TEXT:
+    case TEXT:
        job.setMapperClass(TextMapper.class);
        break;
-    case MapperType.JYDOOP:
+    case JYDOOP:
        job.setMapperClass(JydoopMapper.class);
        break;
     default:
