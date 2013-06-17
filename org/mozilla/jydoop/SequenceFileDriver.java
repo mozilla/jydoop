@@ -82,7 +82,7 @@ public class SequenceFileDriver extends Configured implements Tool {
   }
 
   // TODO: add a "useBinary" which uses BytesWritable for ValueIn
-  public static class MyMapper extends Mapper<LongWritable, Text, PythonKey, PythonValue>  {
+  public static class MyMapper extends Mapper<Text, Text, PythonKey, PythonValue>  {
     private PyObject mapfunc;
     private PyObject contextobj;
     private PythonWrapper pwrapper;
@@ -112,7 +112,7 @@ public class SequenceFileDriver extends Configured implements Tool {
       }
     }
 
-    public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+    public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
 
       // map(k, column1, [column2, ...], context)
 
