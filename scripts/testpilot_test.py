@@ -21,4 +21,6 @@ combine = jydoop.sumreducer
 
 reduce = jydoop.sumreducer
 
+mappertype = testpilotutils.mappertype
+
 setupjob = testpilotutils.setupjob

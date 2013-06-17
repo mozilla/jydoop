@@ -50,3 +50,6 @@ def setupjob(job, args):
 
     job.setInputFormatClass(MyInputFormat)
     FileInputFormat.setInputPaths(job, ",".join(paths));
+
+def mappertype():
+    return "TEXT"
