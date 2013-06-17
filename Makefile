@@ -9,7 +9,7 @@ export JACKSON_CLASSPATH=jython-standalone-2.7-b1.jar:akela-0.5-SNAPSHOT.jar:jac
 CP=$(HADOOP_PATH):$(HBASE_PATH):$(JACKSON_CLASSPATH)
 
 comma:=,
-JAVA_SOURCE=$(addprefix org/mozilla/jydoop/,PythonWrapper.java PythonValue.java PythonKey.java HBaseDriver.java JacksonWrapper.java PySerializer.java)
+JAVA_SOURCE=$(addprefix org/mozilla/jydoop/,PythonWrapper.java PythonValue.java PythonKey.java HBaseDriver.java JacksonWrapper.java PySerializer.java SequenceFileDriver.java)
 TASK=HBaseDriver
 ARGS=input output
 SCRIPT=$(error Must specify SCRIPT=)
