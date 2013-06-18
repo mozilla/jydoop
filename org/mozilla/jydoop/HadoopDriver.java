@@ -306,7 +306,7 @@ public class HadoopDriver extends Configured implements Tool {
 
     PythonWrapper module = initPythonWrapper(scriptFile, job);
 
-    MapperType type = null;
+    MapperType type = MapperType.HBASE;
 
     PyObject typefunc = module.getFunction("mappertype");
     if (typefunc != null) {
