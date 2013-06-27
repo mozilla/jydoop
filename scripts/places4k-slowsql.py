@@ -17,11 +17,11 @@ def hsum(histograms, name):
 
 #deal with shadowing below :(
 python_map = map
-interesting_histograms = ['MOZ_SQLITE_PLACES_READ_MAIN_THREAD_MS', 
-                  'MOZ_SQLITE_PLACES_READ_MS',
-                  'MOZ_SQLITE_PLACES_WRITE_MS',
-                  'MOZ_SQLITE_PLACES_READ_B'
-                  ]
+
+def reportSQL(context,page_size,ls):
+    for (query, (count, time)) in ls.iteritems():
+        context.write(page_size, [count, time])
+
 def map(uid, line, context):
     payload = json.loads(line)
     try:
@@ -39,10 +39,11 @@ def map(uid, line, context):
     except:
         return
 
-    if not 'PLACES_DATABASE_PAGESIZE_B' in histograms:
+
+    if not 'slowSQL' in payload or not 'PLACES_DATABASE_PAGESIZE_B' in histograms:
         return
 
-    
+
     h = histograms['PLACES_DATABASE_PAGESIZE_B']
     if not 'values' in h:
         return
@@ -54,10 +55,15 @@ def map(uid, line, context):
             break
     if page_size == 0:
         return
-    ret = [1]
-    for hname in interesting_histograms:
-        ret.append(hsum(histograms, hname))
-    context.write(page_size, ret)
+
+    slowSQL = payload['slowSQL']
+
+    if 'mainThreadSQL' in slowSQL:
+        mainThreadSQL = slowSQL['mainThread']
+        reportSQL(context, page_size, mainThread)
+    if 'otherThreads' in slowSQL:
+        otherThreads = slowSQL['otherThreads']
+        reportSQL(context, page_size, otherThreads)
 
 def combine(key, values, context):
     values = list(values)
@@ -72,8 +78,8 @@ reduce = combine
 
 setupjob = telemetryutils.setupjob
 
+
 def output(path, results):
     f = open(path, 'w')
-    f.write("page_size,count,%s\n" %( ",".join(interesting_histograms)))
     for k, v in results:
         f.write("%d,%s\n" % (k, ",".join(python_map(str, v))))
