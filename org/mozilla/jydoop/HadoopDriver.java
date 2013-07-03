@@ -2,17 +2,8 @@
 package org.mozilla.jydoop;
 
 import java.io.IOException;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
-import java.util.StringTokenizer;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Iterator;
-import org.apache.hadoop.conf.Configuration;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -22,19 +13,13 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.util.GenericOptionsParser;
-import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.conf.Configuration;
@@ -47,7 +32,11 @@ import org.python.core.util.StringUtil;
 
 import org.apache.commons.lang.StringUtils;
 
-public class HBaseDriver extends Configured implements Tool {
+public class HadoopDriver extends Configured implements Tool {
+  public static enum MapperType {
+     HBASE, TEXT, JYDOOP;
+  }
+
   private static PythonWrapper initPythonWrapper(String pathname, Job job) throws IOException
   {
     job.getConfiguration().set("org.mozilla.jydoop.scriptname", pathname);
@@ -96,7 +85,7 @@ public class HBaseDriver extends Configured implements Tool {
     }
   }
 
-  public static class MyMapper extends TableMapper<PythonKey, PythonValue>  {
+  public static class HBaseMapper extends TableMapper<PythonKey, PythonValue>  {
     private PyObject mapfunc;
     private PyObject contextobj;
     private PythonWrapper pwrapper;
@@ -164,6 +153,84 @@ public class HBaseDriver extends Configured implements Tool {
     }
   }
 
+  public static class TextMapper extends Mapper<Text, Text, PythonKey, PythonValue>  {
+    private PyObject mapfunc;
+    private PyObject contextobj;
+    private PythonWrapper pwrapper;
+
+    public void setup(Context context) throws IOException, InterruptedException
+    {
+      super.setup(context);
+      pwrapper = getPythonWrapper(context.getConfiguration());
+      mapfunc = pwrapper.getFunction("map");
+      contextobj = Py.java2py(new ContextWrapper(context));
+
+      PyObject setupfunc = pwrapper.getFunction("mapsetup");
+      if (setupfunc != null) {
+        setupfunc.__call__(contextobj);
+      }
+    }
+
+    public void cleanup(Context context)
+    {
+      PyObject cleanupfunc = pwrapper.getFunction("mapcleanup");
+      if (cleanupfunc != null) {
+        cleanupfunc.__call__(contextobj);
+      }
+    }
+
+    public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+
+      // map(key, value, context)
+
+      String[] valueBits = new String(value.getBytes()).split("\t", 2);
+      PyObject[] args = new PyObject[3];
+      args[0] = Py.newString(key.toString());
+      args[1] = Py.newString(value.toString());
+      args[2] = contextobj;
+      mapfunc.__call__(args);
+    }
+  }
+
+  public static class JydoopMapper extends Mapper<PythonKey, PythonValue, PythonKey, PythonValue>  {
+    private PyObject mapfunc;
+    private PyObject contextobj;
+    private PythonWrapper pwrapper;
+
+    public void setup(Context context) throws IOException, InterruptedException
+    {
+      super.setup(context);
+      pwrapper = getPythonWrapper(context.getConfiguration());
+      mapfunc = pwrapper.getFunction("map");
+      contextobj = Py.java2py(new ContextWrapper(context));
+
+      PyObject setupfunc = pwrapper.getFunction("mapsetup");
+      if (setupfunc != null) {
+        setupfunc.__call__(contextobj);
+      }
+    }
+
+    public void cleanup(Context context)
+    {
+      PyObject cleanupfunc = pwrapper.getFunction("mapcleanup");
+      if (cleanupfunc != null) {
+        cleanupfunc.__call__(contextobj);
+      }
+    }
+
+    public void map(PythonKey key, PythonValue value, Context context) throws IOException, InterruptedException {
+
+      // map(key, value, context)
+
+      PyObject[] args = new PyObject[3];
+      args[0] = key.value;
+      args[1] = value.value;
+      args[2] = contextobj;
+      mapfunc.__call__(args);
+    }
+  }
+
+
   public static class MyCombiner extends Reducer<PythonKey, PythonValue, PythonKey, PythonValue> {
     private PyObject combinefunc;
     private PyObject contextobj;
@@ -200,7 +267,7 @@ public class HBaseDriver extends Configured implements Tool {
     }
   }
 
-  private HBaseDriver() {}                               // singleton
+  private HadoopDriver() {}                               // singleton
 
   public int run(String[] args) throws Exception {
     if (args.length < 2) {
@@ -218,10 +285,10 @@ public class HBaseDriver extends Configured implements Tool {
     conf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.SnappyCodec");
     final FileSystem fs = FileSystem.get(conf);
 
-    String jobname = "HBaseDriver: " + StringUtils.join(args, " ");
+    String jobname = "HadoopDriver: " + StringUtils.join(args, " ");
 
     Job job = new Job(conf, jobname);
-    job.setJarByClass(HBaseDriver.class);     // class that contains mapper
+    job.setJarByClass(HadoopDriver.class);     // class that contains mapper
     try {
       fs.delete(outdir, true);
     } catch(Exception e) {
@@ -230,7 +297,6 @@ public class HBaseDriver extends Configured implements Tool {
 
     job.setMapOutputKeyClass(PythonKey.class);
     job.setMapOutputValueClass(PythonValue.class);
-    job.setMapperClass(MyMapper.class);
 
     job.setReducerClass(MyReducer.class);    // reducer class
     job.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -239,6 +305,31 @@ public class HBaseDriver extends Configured implements Tool {
     job.setSortComparatorClass(PythonKey.Comparator.class);
 
     PythonWrapper module = initPythonWrapper(scriptFile, job);
+
+    MapperType type = MapperType.HBASE;
+
+    PyObject typefunc = module.getFunction("mappertype");
+    if (typefunc != null) {
+       PyObject typeobj = typefunc.__call__();
+       type = MapperType.valueOf(typeobj.asString());
+    }
+
+    switch(type) {
+    case HBASE:
+       job.setMapperClass(HBaseMapper.class);
+       break;
+    case TEXT:
+       job.setMapperClass(TextMapper.class);
+       break;
+    case JYDOOP:
+       job.setMapperClass(JydoopMapper.class);
+       break;
+    default:
+       // TODO: Warn?
+       // Default to HBaseMapper
+       job.setMapperClass(HBaseMapper.class);
+       break;
+    }
 
     if (!job.getConfiguration().get("org.mozilla.jydoop.scriptname").equals(scriptFile)) {
       throw new java.lang.NullPointerException("Whoops");
@@ -256,6 +347,15 @@ public class HBaseDriver extends Configured implements Tool {
 
     if (!job.waitForCompletion(true)) {
       return 1;
+    }
+
+    // See if we want to skip the export / delete of data from HDFS
+    PyObject skipfunc = module.getFunction("skip_local_output");
+    if (skipfunc != null) {
+       PyObject skipobj = skipfunc.__call__();
+       if (skipobj.asInt() != 0) {
+          return 0;
+       }
     }
 
     // Now read the hadoop files and call the output function
@@ -312,7 +412,7 @@ public class HBaseDriver extends Configured implements Tool {
   }
 
   public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(new Configuration(), new HBaseDriver(), args);
+    int res = ToolRunner.run(new Configuration(), new HadoopDriver(), args);
     System.exit(res);
   }
 
