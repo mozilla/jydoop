@@ -101,8 +101,8 @@ telemetry data for March 30th, 2013 run:
 make hadoop ARGS="scripts/osdistribution.py outputfile 20130330 20130330"
 ````
 
-Suporported Types of Jobs
--------------------------
+Supported Types of Jobs
+-----------------------
 
 jydoop supports several different backend data sources which are of the
 following types:
