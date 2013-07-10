@@ -1,16 +1,15 @@
-HBASE_PATH ?= /usr/lib/hbase
-SPACE := $(NULL) $(NULL)
-HBASE_CP = $(subst $(SPACE),:,$(wildcard $(HBASE_PATH)/*.jar) $(wildcard $(HBASE_PATH)/lib/*.jar))
+HBASE_CP ?= $(shell hbase classpath)
+HADOOP_CP ?= $(shell hadoop classpath)
+# this will need to change once more jars are added
+JACKSON_CP=jython-standalone-2.7-b1.jar:akela-0.5-SNAPSHOT.jar:jackson-core-2.1.4.jar:jackson-databind-2.1.4.jar:jackson-annotations-2.1.4.jar
 
 export HADOOP_USER_CLASSPATH_FIRST="true"
-# this will need to change once more jars are added
-export HADOOP_CLASSPATH=jython-standalone-2.7-b1.jar:akela-0.5-SNAPSHOT.jar:jackson-core-2.1.4.jar:jackson-databind-2.1.4.jar:jackson-annotations-2.1.4.jar
-CP=$(HADOOP_CLASSPATH):$(HBASE_CP)
+export HADOOP_CLASSPATH := $(JACKSON_CP)
+CP=$(HADOOP_CP):$(HBASE_CP):$(JACKSON_CP)
 comma:=,
 JAVA_SOURCE=$(addprefix org/mozilla/jydoop/,PythonWrapper.java PythonValue.java PythonKey.java HadoopDriver.java JacksonWrapper.java PySerializer.java)
 TASK=HadoopDriver
 ARGS=input output
-SCRIPT=$(error Must specify SCRIPT=)
 TEST_PY=test.py
 all: driver.jar
 
@@ -21,7 +20,7 @@ run: driver.jar
 	java -cp driver.jar:$(CP) org.mozilla.jydoop.$(TASK)
 
 hadoop: driver.jar
-	time hadoop jar $< org.mozilla.jydoop.$(TASK) -libjars $(subst :,$(comma),$(HADOOP_CLASSPATH)) $(ARGS)
+	time hadoop jar $< org.mozilla.jydoop.$(TASK) -libjars $(subst :,$(comma),$(JACKSON_CP)) $(ARGS)
 
 out/pylib:
 	mkdir -p out
