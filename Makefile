@@ -1,16 +1,15 @@
 HBASE_CP ?= $(shell hbase classpath)
 HADOOP_CP ?= $(shell hadoop classpath)
+# this will need to change once more jars are added
+JACKSON_CP=jython-standalone-2.7-b1.jar:akela-0.5-SNAPSHOT.jar:jackson-core-2.1.4.jar:jackson-databind-2.1.4.jar:jackson-annotations-2.1.4.jar
 
 export HADOOP_USER_CLASSPATH_FIRST="true"
-# this will need to change once more jars are added
-export JACKSON_CP=jython-standalone-2.7-b1.jar:akela-0.5-SNAPSHOT.jar:jackson-core-2.1.4.jar:jackson-databind-2.1.4.jar:jackson-annotations-2.1.4.jar
 export HADOOP_CLASSPATH := $(JACKSON_CP)
 CP=$(HADOOP_CP):$(HBASE_CP):$(JACKSON_CP)
 comma:=,
 JAVA_SOURCE=$(addprefix org/mozilla/jydoop/,PythonWrapper.java PythonValue.java PythonKey.java HadoopDriver.java JacksonWrapper.java PySerializer.java)
 TASK=HadoopDriver
 ARGS=input output
-SCRIPT=$(error Must specify SCRIPT=)
 TEST_PY=test.py
 all: driver.jar
 
