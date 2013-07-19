@@ -40,6 +40,8 @@ def reduce(key, values, context):
             out[y] += inarray[y]
     context.write(key, out)
 
+combine = reduce
+
 setupjob = telemetryutils.setupjob
 
 def output(path, results):

@@ -14,13 +14,6 @@ def map(uid, line, context):
     try:
         i = payload['info']
         channel = i.get('appUpdateChannel', "too_old")
-        OS = i['OS']
-        appName = i['appName']
-        reason = i['reason']
-        osVersion = str(i['version'])
-        #only care about major versions
-        appVersion = i['appVersion'].split('.')[0]
-        arch = i['arch']
         buildDate = i['appBuildID'][:8]
     except:
         return
@@ -38,7 +31,7 @@ def map(uid, line, context):
         context.write(query, [count, time])
 
 
-def combine(key, values, context):
+def reduce(key, values, context):
     values = list(values)
     out = values[0] 
     for i in range(1, len(values)):
