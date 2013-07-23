@@ -306,12 +306,17 @@ public class HadoopDriver extends Configured implements Tool {
 
     PythonWrapper module = initPythonWrapper(scriptFile, job);
 
-    MapperType type = MapperType.HBASE;
+    if (!job.getConfiguration().get("org.mozilla.jydoop.scriptname").equals(scriptFile)) {
+      throw new java.lang.NullPointerException("Whoops");
+    }
 
-    PyObject typefunc = module.getFunction("mappertype");
-    if (typefunc != null) {
-       PyObject typeobj = typefunc.__call__();
-       type = MapperType.valueOf(typeobj.asString());
+    module.getFunction("setupjob")._jcall(new Object[] { job, Arrays.copyOfRange(args, 2, args.length) });
+
+    // Determine the MapperType (set in 'setupjob', so we have to call that first).
+    MapperType type = MapperType.HBASE;
+    String typeStr = job.getConfiguration().get("org.mozilla.jydoop.mappertype");
+    if (typeStr != null) {
+        type = MapperType.valueOf(typeStr);
     }
 
     switch(type) {
@@ -330,12 +335,6 @@ public class HadoopDriver extends Configured implements Tool {
        job.setMapperClass(HBaseMapper.class);
        break;
     }
-
-    if (!job.getConfiguration().get("org.mozilla.jydoop.scriptname").equals(scriptFile)) {
-      throw new java.lang.NullPointerException("Whoops");
-    }
-
-    module.getFunction("setupjob")._jcall(new Object[] { job, Arrays.copyOfRange(args, 2, args.length) });
 
     boolean maponly = module.getFunction("reduce") == null;
     // set below to 0 to do a map-only job

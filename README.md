@@ -57,11 +57,6 @@ optional functions you can implement for full MapReduce functionality:
   as the location in HDFS where data will be stored. If this function is
   omitted, the default behaviour is to output to a local text file, then remove
   any data from HDFS.
-- `mappertype()` This method may return one of the supported Mapper types,
-  currently `HBASE`, `TEXT`, or `JYDOOP`. The default is `HBASE` so you do not
-  need to implement this method for HBase data sources. Other mapper types
-  should use the `mappertype` function defined in the utility code. For
-  example, TestPilot scripts would use `mappertype = testpilotutils.mappertype`
 
 ### Testing Locally
 To test scripts, use locally saved sample data and FileDriver.py:
@@ -109,6 +104,15 @@ following types:
 - HBase (mapper type `HBASE`)
 - Plain sequence files (mapper type `TEXT`)
 - Jydoop-formatted sequence files (mapper type `JYDOOP`)
+
+The mapper type should be set by the `setupjob` function. Currently supported
+types are `HBASE`, `TEXT`, or `JYDOOP`. The default is `HBASE` so you do not
+need to specify this value for HBase data sources. Other mapper types should
+set the `org.mozilla.jydoop.hbasecolumns` key in the job Configuration. For
+example, the TestPilot `setupjob` function sets the mapper type using:
+```
+job.getConfiguration().set("org.mozilla.jydoop.mappertype", "TEXT")
+```
 
 All the different types require at least two arguments, namely the **script to
 be run** and the **filename where output will be sent**.
@@ -183,8 +187,8 @@ implement the `skip_local_output` function in your job script (and have it
 return `True`). This will cause the data not to be saved locally, and also
 prevent it from being deleted from HDFS when the job is complete.
 
-You then use the job's output in another job by setting
-`mappertype = jydoop.mappertype` in your script.
+You then use the job's output in another job by using the `jydoop.setupjob`
+function in your script.
 
 As a simplistic example, if you have a two-stage job which first reads and
 filters TestPilot data and stores the result into a HDFS location
@@ -203,7 +207,6 @@ def map(key, value, context):
 def skip_local_output():
     return True
 
-mappertype = testpilotutils.mappertype
 setupjob = testpilotutils.setupjob
 ```
 
@@ -218,7 +221,6 @@ def map(key, value, context):
 
 reduce = jydoop.sumreducer
 combine = jydoop.sumreducer
-mappertype = jydoop.mappertype
 setupjob = jydoop.setupjob
 ```
 

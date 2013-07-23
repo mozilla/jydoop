@@ -89,9 +89,5 @@ def setupjob(job, args):
 
     job.setInputFormatClass(MyInputFormat)
     FileInputFormat.setInputPaths(job, ",".join(args));
-
-"""
-Indicate to HadoopDriver which Mapper we want to use.
-"""
-def mappertype():
-    return "JYDOOP"
+    """Indicate to HadoopDriver which Mapper we want to use."""
+    job.getConfiguration().set("org.mozilla.jydoop.mappertype", "JYDOOP")

@@ -50,6 +50,4 @@ def setupjob(job, args):
 
     job.setInputFormatClass(MyInputFormat)
     FileInputFormat.setInputPaths(job, ",".join(paths));
-
-def mappertype():
-    return "TEXT"
+    job.getConfiguration().set("org.mozilla.jydoop.mappertype", "TEXT")
