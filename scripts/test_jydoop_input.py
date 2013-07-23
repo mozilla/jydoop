@@ -22,6 +22,4 @@ combine = jydoop.sumreducer
 
 reduce = jydoop.sumreducer
 
-mappertype = jydoop.mappertype
-
 setupjob = jydoop.setupjob
