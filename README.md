@@ -123,14 +123,14 @@ Telemetry jobs take two extra arguments, the **start date** and the
 **end date** of the range you want to analyze. Telemetry data is quite large,
 so it's best to keep the date range to a few days max.
 
-The production example above uses the HBase support to access Telemetry data.
+The production example above uses the HBase support to access Telemetry data
+(using the `telemetryutils.hbase_setupjob` setup function).
 
 You may also access the most recent 14 days' data in HDFS. This will make jobs
 finish somewhat more quickly than using HBase. To use the HDFS data, specify
 the following in your script:
 ```
-setupjob = telemetryutils.hdfs_setupjob
-mappertype = telemetryutils.hdfs_mappertype
+setupjob = telemetryutils.setupjob
 ```
 
 Check the `osdistribution.hdfs.py` script for an example.
