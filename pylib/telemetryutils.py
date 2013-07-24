@@ -3,13 +3,13 @@
 # NOTE: When modifying this file, be careful to use java-specific imports
 #       only within setupjob, so that people can test scripts using python!
 
-# NOTE: By default we run against the data in HBase, but you may run against
-#       exported data in HDFS for improved speed by using the hdfs_* variants
-#       of the setupjob and mappertype functions.
+# NOTE: By default we run against the data in HDFS, but you may run against
+#       the raw data in HBase if you need to access data older than 14 days.
+#       To access HBase, use the 'hbase_setupjob' function.
 
 dateformat = 'yyyyMMdd'
 
-def setupjob(job, args):
+def hbase_setupjob(job, args):
     """
     Set up a job to run on telemetry date ranges using data from HBase
 
@@ -44,7 +44,7 @@ def setupjob(job, args):
 hdfs_pathformat = '/data/telemetry/%s'
 hdfs_dateformat = 'yyyy/MM/dd'
 
-def hdfs_setupjob(job, args):
+def setupjob(job, args):
     """
     Similar to the above, but run telemetry data that's already been exported
     to HDFS.
@@ -106,6 +106,4 @@ def hdfs_setupjob(job, args):
 
     job.setInputFormatClass(MyInputFormat)
     FileInputFormat.setInputPaths(job, ",".join(paths));
-
-def hdfs_mappertype():
-    return "TEXT"
+    job.getConfiguration().set("org.mozilla.jydoop.mappertype", "TEXT")

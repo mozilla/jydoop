@@ -11,9 +11,7 @@ import telemetryutils
 # almost all cases you should use telemetryutils.setupjob (or in the future
 # crashstatsutils.setupjob or healthreportutils.setupjob)
 
-setupjob = telemetryutils.hdfs_setupjob
-
-mappertype = telemetryutils.hdfs_mappertype
+setupjob = telemetryutils.setupjob
 
 # The map function is required, and is called once for each incoming record.
 # The map function may choose to call context.write(key, value) any number
