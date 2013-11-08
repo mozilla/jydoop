@@ -160,12 +160,8 @@ public class JacksonWrapper
   }
 
   public static String dumps(PyObject obj) throws IOException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    JsonGenerator parser = factory().createJsonGenerator(baos, JsonEncoding.UTF8);
     // Not sure if this is the fastest way
-    // return objectMapper.writer().writeValueAsString(obj) is another option
-    // didn't benchmark because json serialization wasn't a hotpath at time of writing
-    parser.writeObject(obj);
-    return new String(baos.toByteArray(), "UTF-8");
+    ObjectMapper mapper = new ObjectMapper();
+    return mapper.writeValueAsString(obj);
   }
 }
