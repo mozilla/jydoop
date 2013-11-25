@@ -9,6 +9,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileStatus;
 
+import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -82,6 +83,11 @@ public class HadoopDriver extends Configured implements Tool {
     public void write(PyObject key, PyObject val) throws IOException, InterruptedException
     {
       cx.write(new PythonKey(key), new PythonValue(val));
+    }
+
+    public Counter getCounter(String groupName, String counterName)
+    {
+      return cx.getCounter(groupName, counterName);
     }
   }
 
