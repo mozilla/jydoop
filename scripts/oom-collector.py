@@ -2,8 +2,12 @@ import crashstatsutils
 import jydoop
 import json
 import csv
+import dateutil.parser
+from datetime import datetime
 
 cutoff = 50 * 2**20
+cutoffbuild = 20131207
+cutoffdate = datetime(2013, 12, 12, 0, 30)
 
 setupjob = crashstatsutils.dosetupjob([('meta_data', 'json'), ('processed_data', 'json')])
 
@@ -15,10 +19,13 @@ def map(k, meta_data, processed_data, context):
     if meta.get('ReleaseChannel', None) != 'nightly':
         return
 
-    if int(meta.get('buildid', '0')[:8]) < 20131127:
+    if int(meta.get('buildid', '0')[:8]) < cutoffbuild:
         return
 
     processed = json.loads(processed_data)
+    pdate = dateutil.parser.parse(processed['date_processed'])
+    if pdate < cutoffdate:
+        return
 
     if processed.get('os_name', None) != 'Windows NT':
         return
@@ -47,7 +54,7 @@ def output(path, results):
     f = open(path, 'w')
     w = csv.writer(f)
     w.writerow(('uuid',
-                'SmallestVirtualBlock',
+                'LargestFreeVirtualBlock',
                 'OOMAllocationSize',
                 'TotalVirtualMemory',
                 'AvailablePhysicalMemory',
