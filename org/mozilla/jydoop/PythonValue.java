@@ -235,8 +235,30 @@ public class PythonValue implements Writable
     value = ReadObject(in);
   }
 
+  @Override
   public int hashCode() {
-    return value.hashCode();
+    return hashCode(value);
+  }
+
+  private int hashCode(PyObject obj) {
+    if (obj == Py.None) {
+      return 666;
+    }
+    if (CheckType(obj) == TYPE_TUPLE) {
+      PyTuple tobj = (PyTuple) obj;
+      // @see PyTuple.hashCode
+      int y;
+      int len = tobj.size();
+      int mult = 1000003;
+      int x = 0x345678;
+      while (--len >= 0) {
+        y = hashCode(tobj.pyget(len));
+        x = (x ^ y) * mult;
+        mult += 82520 + len + len;
+      }
+      return x + 97531;
+    }
+    return obj.hashCode();
   }
 
   public String toString() {
