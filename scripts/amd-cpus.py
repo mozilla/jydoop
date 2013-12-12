@@ -2,7 +2,7 @@ import crashstatsutils
 import json
 import jydoop
 
-setupjob = crashstatsutils.dosetupjob([('processed_data', 'json')])
+setupjob = crashstatsutils.dosetupjob([('meta_data', 'json'), ('processed_data', 'json')])
 
 ff21_b4_buildid = '20130423212553'
 ff21_b4_signatures = ('mozilla::dom::DocumentBinding::CreateInterfaceObjects(JSContext*, JSObject*, JSObject**)',
@@ -22,30 +22,32 @@ ff19_signatures = ('TlsGetValue',
                )
 
 
-def map(k, processed_data, context):
+def map(k, meta_data, processed_data, context):
     """
     Group and count by (signature, cpu_info)
     """
     if processed_data is None:
-        context.write('unprocessed', 1)
         return
 
     processed = json.loads(processed_data)
+    meta = json.loads(meta_data)
     if processed.get('os_name', None) != 'Windows NT':
         return
 
-    if processed.get('build', None) != ff19_buildid:
+    if processed.get('build', None) != ff21_b4_buildid:
         return
 
     signature = processed.get('signature')
-    if signature not in ff19_signatures:
+    if signature not in ff21_b4_signatures:
         return
 
+    gfxvendor = meta.get('AdapterVendorID', None)
     cpuinfo = processed.get('cpu_info', None)
-    if cpuinfo is None:
+
+    if gfxvendor is None:
         return
 
-    context.write((signature, cpuinfo), 1)
+    context.write((signature, gfxvendor), 1)
 
 combine = jydoop.sumreducer
 reduce = jydoop.sumreducer
