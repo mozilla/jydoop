@@ -72,7 +72,7 @@ public class HadoopDriver extends Configured implements Tool {
 
   public static class ContextWrapper
   {
-    private TaskInputOutputContext cx;
+    public TaskInputOutputContext cx;
 
     public ContextWrapper(TaskInputOutputContext taskcx)
     {
@@ -123,7 +123,13 @@ public class HadoopDriver extends Configured implements Tool {
 
       // should be family:qualifier[,family:qualifier...]
 
-      String[] columns = context.getConfiguration().get("org.mozilla.jydoop.hbasecolumns").split(",");
+      String columnConfig = context.getConfiguration().get("org.mozilla.jydoop.hbasecolumns");
+      String[] columns;
+      if (columnConfig == null || columnConfig.equals("")) {
+        columns = new String[0];
+      } else {
+        columns = columnConfig.split(",");
+      }
 
       columnlist = new ColumnID[columns.length];
       for (int i = 0; i < columns.length; ++i) {
