@@ -33,7 +33,8 @@ out/scripts:
 	mkdir -p out
 	ln -s ../scripts out/scripts
 
-driver.jar: out/scripts out/pylib $(wildcard pylib/*.py scripts/*.py scripts/fhr/*.py) $(JAVA_SOURCE)
+DRIVER_DEPS = $(shell find -L pylib scripts -name "*.py")
+driver.jar: out/scripts out/pylib $(DRIVER_DEPS) $(JAVA_SOURCE)
 	javac -Xlint:deprecation -d out  -cp $(CP) $(JAVA_SOURCE)
 	jar -cvf $@ -C out .
 
