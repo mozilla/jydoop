@@ -56,7 +56,7 @@ public class HadoopDriver extends Configured implements Tool {
   public static class WritableIterWrapper extends PyIterator
   {
     private Iterator<PythonValue> iter;
-    
+
     public WritableIterWrapper(Iterator<PythonValue> i)
     {
       iter = i;
@@ -88,6 +88,11 @@ public class HadoopDriver extends Configured implements Tool {
     public Counter getCounter(String groupName, String counterName)
     {
       return cx.getCounter(groupName, counterName);
+    }
+
+    public Configuration getConfiguration()
+    {
+      return cx.getConfiguration();
     }
   }
 
@@ -291,7 +296,17 @@ public class HadoopDriver extends Configured implements Tool {
     String scriptFile = args[0];
     String outPath = args[1];
 
-    Path outdir = new Path(outPath);
+    Path hadoopDir = new Path(outPath);
+
+    // If we're not using an absolute path, see if JYDOOP_OUTPUT_DIR is set
+    // in the environment.
+    if (!hadoopDir.isAbsolute()) {
+      String localOutputDir = System.getenv("JYDOOP_OUTPUT_DIR");
+      if (localOutputDir != null) {
+        outPath = new Path(new Path(localOutputDir), hadoopDir).toString();
+      }
+    }
+
     final Configuration conf = getConf();
     conf.set("mapred.compress.map.output", "true");
     conf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.SnappyCodec");
@@ -302,10 +317,10 @@ public class HadoopDriver extends Configured implements Tool {
     Job job = new Job(conf, jobname);
     job.setJarByClass(HadoopDriver.class);     // class that contains mapper
     try {
-      fs.delete(outdir, true);
+      fs.delete(hadoopDir, true);
     } catch(Exception e) {
     }
-    FileOutputFormat.setOutputPath(job, outdir);  // adjust directories as required
+    FileOutputFormat.setOutputPath(job, hadoopDir);  // adjust directories as required
 
     job.setMapOutputKeyClass(PythonKey.class);
     job.setMapOutputValueClass(PythonValue.class);
@@ -371,7 +386,7 @@ public class HadoopDriver extends Configured implements Tool {
 
     // Now read the hadoop files and call the output function
 
-    final FileStatus[] files = fs.listStatus(outdir);
+    final FileStatus[] files = fs.listStatus(hadoopDir);
 
     class KeyValueIterator extends PyIterator
     {
@@ -414,10 +429,11 @@ public class HadoopDriver extends Configured implements Tool {
         outputfunc = org.python.core.imp.load("jydoop").__getattr__("outputWithKey");
       }
     }
+
     outputfunc.__call__(Py.newString(outPath), new KeyValueIterator());
 
     // If we got here, the temporary files are irrelevant. Delete them.
-    fs.delete(outdir, true);
+    fs.delete(hadoopDir, true);
 
     return 0;
   }
