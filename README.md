@@ -61,9 +61,9 @@ optional functions you can implement for full MapReduce functionality:
 ### Testing Locally
 To test scripts, use locally saved sample data and FileDriver.py:
 ```
-python FileDriver.py script/osdistribution.py saveddata analysis.out
+python FileDriver.py script/osdistribution.py sample.json analysis.out
 ```
-where `saveddata` is a newline-separated json dump. See the examples in
+where `sample.json` is a newline-separated json dump. See the examples in
 `scripts/` for map-only or map-reduce jobs.
 
 Local testing can be done on any machine with Python installed, and doesn't
